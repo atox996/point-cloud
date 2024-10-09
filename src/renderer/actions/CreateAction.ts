@@ -74,7 +74,7 @@ export default class CreateAction extends Action {
 
     document.removeEventListener("pointermove", this.onPointerMove);
     document.removeEventListener("pointerup", this.onPointerUp);
-
+    this.selectionBox.select();
     console.log(this.selectionBox);
     console.log(this.selectionHelper);
   };

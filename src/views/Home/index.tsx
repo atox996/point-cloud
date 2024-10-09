@@ -52,7 +52,7 @@ const Home = () => {
 
     pointCloud
       .load("http://10.8.33.95:3000/pcd/Staging_6669_72.pcd")
-      .then(() => {
+      .finally(() => {
         mainViewer.current?.render();
         overheadViewer.current?.render();
         sideViewer.current?.render();
