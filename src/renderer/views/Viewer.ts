@@ -1,10 +1,13 @@
 import { Camera, EventDispatcher, WebGLRenderer } from "three";
 import type PointCloud from "../PointCloud";
+import { ActionName, Actions, Action } from "../actions";
 
 export default abstract class Viewer extends EventDispatcher {
   container: HTMLElement;
   renderer: WebGLRenderer;
   pointCloud: PointCloud;
+  actions: ActionName[] = [];
+  actionMap = new Map<ActionName, Action>();
 
   get width() {
     return this.container.clientWidth;
@@ -23,6 +26,9 @@ export default abstract class Viewer extends EventDispatcher {
 
     this.container = container;
     this.renderer = new WebGLRenderer({ antialias: true });
+    this.renderer.domElement.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+    });
     this.container.appendChild(this.renderer.domElement);
 
     this.pointCloud = pointCloud;
@@ -36,6 +42,49 @@ export default abstract class Viewer extends EventDispatcher {
   resize() {
     this.renderer.setSize(this.width, this.height);
     this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.render();
+  }
+
+  getAction(name: ActionName) {
+    return this.actionMap.get(name);
+  }
+
+  setActions(actionNames: ActionName[]) {
+    this.actions = actionNames;
+    actionNames.forEach((name) => {
+      const ActionCtr = Actions.get(name);
+      if (!ActionCtr) return;
+      const action = new ActionCtr(this);
+      action.init();
+      this.actionMap.set(name, action);
+    });
+  }
+
+  disableAction(actionName?: ActionName | ActionName[]) {
+    let names: ActionName[] = [];
+    if (!actionName) {
+      names = this.actions;
+    } else {
+      names = Array.isArray(actionName) ? actionName : [actionName];
+      names.forEach((name) => {
+        const action = this.actionMap.get(name);
+        if (action) action.toggle(false);
+      });
+    }
+  }
+
+  enableAction(actionName?: ActionName | ActionName[]) {
+    let names: ActionName[] = [];
+    if (!actionName) {
+      names = this.actions;
+    } else {
+      names = Array.isArray(actionName) ? actionName : [actionName];
+    }
+
+    names.forEach((name) => {
+      const action = this.actionMap.get(name);
+      if (action) action.toggle(true);
+    });
   }
 
   render() {
@@ -46,5 +95,10 @@ export default abstract class Viewer extends EventDispatcher {
     this.renderer.dispose();
     this.resizeObserver.disconnect();
     this._listeners = {};
+
+    this.actionMap.forEach((action) => {
+      action.destroy();
+    });
+    this.actionMap.clear();
   }
 }

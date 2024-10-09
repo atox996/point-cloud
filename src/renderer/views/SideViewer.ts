@@ -72,17 +72,30 @@ export default class SideViewer extends Viewer {
       ...config,
     };
 
-    this.setAxis(this.config.axis);
-
     this.projectRect = new Box3();
 
     this.resize();
+
+    this.setAxis(this.config.axis);
+
+    this.initEvent();
+  }
+
+  initEvent() {
+    this.pointCloud.addEventListener("select", (ev) => {
+      const obj = ev.selection.findLast((o) => o instanceof Object3D);
+      if (obj) {
+        this.fitObject(obj);
+      } else {
+        this.object = null;
+      }
+      this.render();
+    });
   }
 
   resize() {
-    super.resize();
-
     this.camera.updateProjectionMatrix();
+    super.resize();
   }
 
   setAxis(axis: axisType) {
@@ -93,6 +106,8 @@ export default class SideViewer extends Viewer {
     this.alignAxis[axisValue as "x" | "y" | "z"] = isInverse ? -0.5 : 0.5;
 
     if (this.object) this.fitObject();
+
+    this.render();
   }
 
   fitObject(object?: Object3D) {
@@ -173,6 +188,7 @@ export default class SideViewer extends Viewer {
     this.camera.right = cameraW / 2;
     this.camera.top = cameraH / 2;
     this.camera.bottom = -cameraH / 2;
+    this.camera.zoom = 1;
     this.camera.updateProjectionMatrix();
   }
 }

@@ -3,12 +3,17 @@ import {
   Box3Helper,
   Color,
   EventDispatcher,
+  Object3D,
   Scene,
   Vector3,
 } from "three";
 import { PCDLoader } from "three/examples/jsm/loaders/PCDLoader.js";
 
-export default class PointCloud extends EventDispatcher {
+interface TEventMap {
+  select: { selection: Object3D[] };
+}
+
+export default class PointCloud extends EventDispatcher<TEventMap> {
   scene: Scene;
   trimBox: Box3Helper;
   constructor() {
@@ -17,7 +22,7 @@ export default class PointCloud extends EventDispatcher {
     this.scene = new Scene();
 
     this.trimBox = new Box3Helper(
-      new Box3(new Vector3(-5, -5, -5), new Vector3(5, 5, 5)),
+      new Box3(new Vector3(-2, -2, -2), new Vector3(2, 2, 2)),
       new Color(0xffff00),
     );
     this.scene.add(this.trimBox);

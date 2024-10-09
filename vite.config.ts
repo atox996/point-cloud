@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import AutoImport from "unplugin-auto-import/vite";
+import svgr from "vite-plugin-svgr";
 
 import { execSync } from "node:child_process";
 import fs from "node:fs";
@@ -40,6 +41,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    svgr(),
     AutoImport({
       imports: [
         "react",

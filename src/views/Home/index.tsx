@@ -1,6 +1,8 @@
 import classNames from "classnames";
 import styles from "./index.module.less";
 import { MainViewer, PointCloud, SideViewer } from "@/renderer";
+import BoxSvg from "@/assets/box.svg?react";
+import { ActionName } from "@/renderer/actions";
 
 const Home = () => {
   const initialized = useRef(false);
@@ -10,41 +12,74 @@ const Home = () => {
   const sideViewerRef = useRef<HTMLDivElement>(null);
   const rearViewerRef = useRef<HTMLDivElement>(null);
 
+  const mainViewer = useRef<MainViewer>();
+  const overheadViewer = useRef<SideViewer>();
+  const sideViewer = useRef<SideViewer>();
+  const rearViewer = useRef<SideViewer>();
+
   const pointCloud = new PointCloud();
+
+  const [TOOLS] = useState([
+    {
+      name: "Create",
+      icon: BoxSvg,
+      onClick: () => {
+        console.log("Create");
+        mainViewer.current?.getAction(ActionName.OrbitControls)?.toggle();
+        mainViewer.current?.getAction(ActionName.Create)?.toggle();
+      },
+    },
+  ]);
 
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
 
-    const mainViewer = new MainViewer(mainViewerRef.current!, pointCloud);
-    const overheadViewer = new SideViewer(
+    mainViewer.current = new MainViewer(mainViewerRef.current!, pointCloud);
+    mainViewer.current.disableAction(ActionName.Create);
+
+    overheadViewer.current = new SideViewer(
       overheadViewerRef.current!,
       pointCloud,
       { axis: "z" },
     );
-    const sideViewer = new SideViewer(sideViewerRef.current!, pointCloud, {
+    sideViewer.current = new SideViewer(sideViewerRef.current!, pointCloud, {
       axis: "y",
     });
-    const rearViewer = new SideViewer(rearViewerRef.current!, pointCloud, {
+    rearViewer.current = new SideViewer(rearViewerRef.current!, pointCloud, {
       axis: "x",
     });
-
-    overheadViewer.fitObject(pointCloud.trimBox);
-    sideViewer.fitObject(pointCloud.trimBox);
-    rearViewer.fitObject(pointCloud.trimBox);
 
     pointCloud
       .load("http://10.8.33.95:3000/pcd/Staging_6669_72.pcd")
       .then(() => {
-        mainViewer.render();
-        overheadViewer.render();
-        sideViewer.render();
-        rearViewer.render();
+        mainViewer.current?.render();
+        overheadViewer.current?.render();
+        sideViewer.current?.render();
+        rearViewer.current?.render();
+
+        // DEBUG
+        pointCloud.dispatchEvent({
+          type: "select",
+          selection: [pointCloud.trimBox],
+        });
       });
   }, []);
 
   return (
     <div className={classNames(styles["page-wrapper"])}>
+      <div className={classNames(styles["tools-wrapper"])}>
+        {TOOLS.map((tool) => (
+          <div
+            key={tool.name}
+            className={classNames(styles["tool-item"])}
+            onClick={tool.onClick}
+          >
+            <tool.icon />
+            <span>{tool.name}</span>
+          </div>
+        ))}
+      </div>
       <div
         className={classNames(styles["main-viewer"])}
         ref={mainViewerRef}
