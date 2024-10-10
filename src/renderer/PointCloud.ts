@@ -4,10 +4,12 @@ import {
   Color,
   EventDispatcher,
   Object3D,
+  Points,
   Scene,
   Vector3,
 } from "three";
 import { PCDLoader } from "three/examples/jsm/loaders/PCDLoader.js";
+import PointMaterial from "./material/PointsMaterial";
 
 interface TEventMap {
   select: { selection: Object3D[] };
@@ -30,7 +32,8 @@ export default class PointCloud extends EventDispatcher<TEventMap> {
 
   async load(url: string, onProgress?: (e: ProgressEvent) => void) {
     const pcdLoader = new PCDLoader();
-    const points = await pcdLoader.loadAsync(url, onProgress);
+    const { geometry } = await pcdLoader.loadAsync(url, onProgress);
+    const points = new Points(geometry, new PointMaterial());
     this.scene.add(points);
   }
 }
