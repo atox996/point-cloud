@@ -3,6 +3,7 @@ import styles from "./index.module.less";
 import { MainViewer, PointCloud, SideViewer } from "@/renderer";
 import BoxSvg from "@/assets/box.svg?react";
 import { ActionName } from "@/renderer/actions";
+import GUI from "three/examples/jsm/libs/lil-gui.module.min.js";
 
 const Home = () => {
   const initialized = useRef(false);
@@ -53,6 +54,86 @@ const Home = () => {
     pointCloud
       .load("http://10.8.33.95:3000/pcd/Staging_6669_72.pcd")
       .finally(() => {
+        console.log(pointCloud.points);
+
+        const gui = new GUI();
+        gui.add(pointCloud.points.material, "size", 1, 10);
+        gui.add(pointCloud.points.material, "opacity", 0, 1, 0.01);
+        if (pointCloud.points.material.color) {
+          gui.addColor(pointCloud.points.material, "color");
+        }
+        // const gradient = {
+        //   minColor: 0x00ffff,
+        //   maxColor: 0x0000ff,
+        // };
+        // pointCloud.points.material.gradient = [
+        //   [0, gradient.minColor],
+        //   [1, gradient.maxColor],
+        // ];
+        // gui
+        //   .addColor(gradient, "minColor")
+        //   .name("gradient_1")
+        //   .onChange(() => {
+        //     pointCloud.points.material.gradient = [
+        //       [0, gradient.minColor],
+        //       [1, gradient.maxColor],
+        //     ];
+        //   });
+        // gui
+        //   .addColor(gradient, "maxColor")
+        //   .name("gradient_2")
+        //   .onChange(() => {
+        //     pointCloud.points.material.gradient = [
+        //       [0, gradient.minColor],
+        //       [1, gradient.maxColor],
+        //     ];
+        //   });
+        const gradientRange = {
+          min: 0,
+          max: 1,
+        };
+        const gradientRange_1 = gui
+          .add(gradientRange, "min", -10, gradientRange.max)
+          .name("gradientRange_1")
+          .onChange(() => {
+            if (gradientRange_1._max !== gradientRange.max) {
+              gradientRange_1.max(gradientRange.max);
+              gradientRange_1.setValue(gradientRange_1.getValue());
+            }
+            if (gradientRange_2._min !== gradientRange.min) {
+              gradientRange_2.min(gradientRange.min);
+              gradientRange_2.setValue(gradientRange_2.getValue());
+            }
+            pointCloud.points.material.gradientRange = [
+              gradientRange.min,
+              gradientRange.max,
+            ];
+          });
+        const gradientRange_2 = gui
+          .add(gradientRange, "max", gradientRange.min, 10)
+          .name("gradientRange_2")
+          .onChange(() => {
+            if (gradientRange_1._max !== gradientRange.max) {
+              gradientRange_1.max(gradientRange.max);
+              gradientRange_1.setValue(gradientRange_1.getValue());
+            }
+            if (gradientRange_2._min !== gradientRange.min) {
+              gradientRange_2.min(gradientRange.min);
+              gradientRange_2.setValue(gradientRange_2.getValue());
+            }
+
+            pointCloud.points.material.gradientRange = [
+              gradientRange.min,
+              gradientRange.max,
+            ];
+          });
+        gui.onChange(() => {
+          mainViewer.current?.render();
+          overheadViewer.current?.render();
+          sideViewer.current?.render();
+          rearViewer.current?.render();
+        });
+
         mainViewer.current?.render();
         overheadViewer.current?.render();
         sideViewer.current?.render();
