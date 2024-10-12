@@ -59,12 +59,17 @@ export default class PointCloud extends EventDispatcher<TEventMap> {
   async load(url: string, onProgress?: (e: ProgressEvent) => void) {
     const pcdLoader = new PCDLoader();
     const { geometry } = await pcdLoader.loadAsync(url, onProgress);
-    // 获取 position 属性中的顶点数量
-    const positionAttribute = geometry.getAttribute("position");
-    geometry.setAttribute("color", positionAttribute);
-
     this.points.geometry.dispose();
     this.points.geometry = geometry;
     return this.points;
+  }
+
+  dispose() {
+    this.points.geometry.dispose();
+    this.points.material.dispose();
+
+    this.trimBox.dispose();
+
+    this.scene.clear();
   }
 }

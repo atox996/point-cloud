@@ -52,16 +52,26 @@ const Home = () => {
     });
 
     pointCloud
-      .load("http://10.8.33.95:3000/pcd/Staging_6669_72.pcd")
+      .load(
+        "https://basicai-prod-app-dataset.s3.us-west-2.amazonaws.com/team_1710563/dataset_1249533/data_44227652/binary_08a70e788ee5457f82f5d2fe95d34f5f.pcd",
+      )
       .finally(() => {
         console.log(pointCloud.points);
 
         const gui = new GUI();
         gui.add(pointCloud.points.material, "size", 1, 10);
         gui.add(pointCloud.points.material, "opacity", 0, 1, 0.01);
-        if (pointCloud.points.material.color) {
-          gui.addColor(pointCloud.points.material, "color");
-        }
+
+        // default: color attribute demo
+        const positionAttr =
+          pointCloud.points.geometry.getAttribute("position");
+        pointCloud.points.geometry.setAttribute("color", positionAttr);
+
+        // // use_color
+        // pointCloud.points.material.color = 0xfff000;
+        // gui.addColor(pointCloud.points.material, "color");
+
+        // // use_gradient
         // const gradient = {
         //   minColor: 0x00ffff,
         //   maxColor: 0x0000ff,
@@ -88,6 +98,7 @@ const Home = () => {
         //       [1, gradient.maxColor],
         //     ];
         //   });
+
         const gradientRange = {
           min: 0,
           max: 1,
