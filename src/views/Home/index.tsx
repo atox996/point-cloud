@@ -71,33 +71,33 @@ const Home = () => {
         // pointCloud.points.material.color = 0xfff000;
         // gui.addColor(pointCloud.points.material, "color");
 
-        // // use_gradient
-        // const gradient = {
-        //   minColor: 0x00ffff,
-        //   maxColor: 0x0000ff,
-        // };
-        // pointCloud.points.material.gradient = [
-        //   [0, gradient.minColor],
-        //   [1, gradient.maxColor],
-        // ];
-        // gui
-        //   .addColor(gradient, "minColor")
-        //   .name("gradient_1")
-        //   .onChange(() => {
-        //     pointCloud.points.material.gradient = [
-        //       [0, gradient.minColor],
-        //       [1, gradient.maxColor],
-        //     ];
-        //   });
-        // gui
-        //   .addColor(gradient, "maxColor")
-        //   .name("gradient_2")
-        //   .onChange(() => {
-        //     pointCloud.points.material.gradient = [
-        //       [0, gradient.minColor],
-        //       [1, gradient.maxColor],
-        //     ];
-        //   });
+        // use_gradient
+        const gradient = {
+          minColor: 0x00ffff,
+          maxColor: 0x0000ff,
+        };
+        pointCloud.points.material.gradient = [
+          [0, gradient.minColor],
+          [1, gradient.maxColor],
+        ];
+        gui
+          .addColor(gradient, "minColor")
+          .name("gradient_1")
+          .onChange(() => {
+            pointCloud.points.material.gradient = [
+              [0, gradient.minColor],
+              [1, gradient.maxColor],
+            ];
+          });
+        gui
+          .addColor(gradient, "maxColor")
+          .name("gradient_2")
+          .onChange(() => {
+            pointCloud.points.material.gradient = [
+              [0, gradient.minColor],
+              [1, gradient.maxColor],
+            ];
+          });
 
         const gradientRange = {
           min: 0,

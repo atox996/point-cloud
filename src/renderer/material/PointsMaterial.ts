@@ -51,6 +51,8 @@ export default class PointsMaterial extends RawShaderMaterial {
     this.gradientRange =
       parameters.gradientRange ?? this.uniforms.gradientRange.value;
 
+    this.transparent = true;
+
     this.update();
   }
 
@@ -91,12 +93,6 @@ export default class PointsMaterial extends RawShaderMaterial {
   }
 
   update() {
-    if (this.opacity === 1) {
-      this.transparent = false;
-    } else {
-      this.transparent = true;
-    }
-
     this.defines = {
       use_raw_shader: "isRawShaderMaterial" in this,
       use_color: !this.gradient.length && !!this.#color,

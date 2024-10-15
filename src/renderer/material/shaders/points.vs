@@ -10,13 +10,15 @@ precision mediump int;
 
 uniform float size;
 uniform vec3 uColor;
+uniform float opacity;
 uniform sampler2D gradient;
-uniform float gradientRange[2];
+uniform vec2 gradientRange;
 
 varying vec3 vColor;
+varying float vOpacity;
 
 vec3 getGradientByZ() {
-	float w = (position.z - gradientRange[0]) / (gradientRange[1]-gradientRange[0]);
+	float w = (position.z - gradientRange.x) / (gradientRange.y-gradientRange.x);
 	vec3 cGradient = texture2D(gradient, vec2(w,1.0-w)).rgb;
 
 	return cGradient;
@@ -24,6 +26,8 @@ vec3 getGradientByZ() {
 
 void main() {
   gl_PointSize = size;
+
+  vOpacity = opacity;
 
   vColor = color;
   #ifdef use_color
