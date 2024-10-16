@@ -1,9 +1,4 @@
-import {
-  Color,
-  RawShaderMaterial,
-  type ColorRepresentation,
-  type Vector2Tuple,
-} from "three";
+import { RawShaderMaterial } from "three";
 
 import vertexShader from "./shaders/points.vs?raw";
 import fragmentShader from "./shaders/points.fs?raw";
@@ -11,32 +6,33 @@ import type {
   IUniforms,
   IDefines,
   IParameters,
-  IGradient,
+  IUniformValue,
   IUniformKeys,
 } from "./types";
-import { generateGradientTexture, uniform } from "./utils";
+import { uniform } from "./utils";
 
 export default class PointsMaterial extends RawShaderMaterial {
-  #color?: ColorRepresentation;
-
-  #gradient: IGradient = [];
-  #gradientTexture = generateGradientTexture();
-
-  @uniform declare color?: ColorRepresentation;
-  @uniform declare size: number;
-  @uniform declare opacity: number;
-  @uniform declare gradient: IGradient;
-  @uniform declare gradientRange: Vector2Tuple;
+  @uniform declare sColor: IUniformValue<"sColor">;
+  @uniform declare size: IUniformValue<"size">;
+  @uniform declare opacity: IUniformValue<"opacity">;
+  @uniform declare gradient: IUniformValue<"gradient">;
+  @uniform declare gradientRange: IUniformValue<"gradientRange">;
+  @uniform declare boxes: IUniformValue<"boxes">;
+  @uniform declare activeBoxes: IUniformValue<"activeBoxes">;
+  @uniform declare activeMode: IUniformValue<"activeMode">;
 
   uniforms: IUniforms = {
-    uColor: { value: null },
+    sColor: { value: null },
     size: { value: 1 },
     opacity: { value: 1 },
-    gradient: { value: null },
+    gradient: { value: [] },
     gradientRange: { value: [0, 1] },
+    boxes: { value: [] },
+    activeBoxes: { value: [] },
+    activeMode: { value: "highlight" },
   };
 
-  defines: IDefines = {};
+  defines = {} as IDefines;
 
   constructor(parameters: IParameters = {}) {
     super({
@@ -44,67 +40,49 @@ export default class PointsMaterial extends RawShaderMaterial {
       fragmentShader,
     });
 
-    this.color = parameters.color ?? this.#color;
-    this.size = parameters.size ?? this.uniforms.size.value;
-    this.opacity = parameters.opacity ?? this.uniforms.opacity.value;
-    this.gradient = parameters.gradient ?? this.#gradient;
+    this.sColor = parameters.sColor ?? this.getUniform("sColor");
+    this.size = parameters.size ?? this.getUniform("size");
+    this.opacity = parameters.opacity ?? this.getUniform("opacity");
+    this.gradient = parameters.gradient ?? this.getUniform("gradient");
     this.gradientRange =
-      parameters.gradientRange ?? this.uniforms.gradientRange.value;
+      parameters.gradientRange ?? this.getUniform("gradientRange");
+    this.boxes = parameters.boxes ?? this.getUniform("boxes");
+    this.activeBoxes = parameters.activeBoxes ?? this.getUniform("activeBoxes");
+    this.activeMode = parameters.activeMode ?? this.getUniform("activeMode");
 
     this.transparent = true;
 
     this.update();
   }
 
-  getUniform<K extends IUniformKeys>(name: K) {
-    switch (name) {
-      case "color":
-        return this.#color;
-      case "gradient":
-        return this.#gradient;
-      default:
-        return this.uniforms?.[name].value;
-    }
+  getUniform<K extends IUniformKeys>(name: K): IUniformValue<K> {
+    return this.uniforms?.[name].value;
   }
-
-  setUniform<K extends IUniformKeys>(name: K, value: IUniforms[K]["value"]) {
+  setUniform<K extends IUniformKeys>(name: K, value: IUniformValue<K>) {
     if (!this.uniforms) return;
-    switch (name) {
-      case "color":
-        this.#color = value;
-        if (this.uniforms.uColor.value) {
-          this.uniforms.uColor.value.set(value);
-        } else if (value) {
-          this.uniforms.uColor.value = new Color(value);
-        }
-        break;
-      case "gradient":
-        if (this.#gradient !== value) {
-          this.#gradient = value;
-          this.#gradientTexture.dispose();
-          this.#gradientTexture = generateGradientTexture(value);
-          this.uniforms.gradient.value = this.#gradientTexture;
-        }
-        break;
-      default:
-        this.uniforms[name].value = value;
-    }
+
+    this.uniforms[name].value = value;
+
     this.update();
   }
 
   update() {
     this.defines = {
       use_raw_shader: "isRawShaderMaterial" in this,
-      use_color: !this.gradient.length && !!this.#color,
+      use_color: !this.gradient.length && !!this.getUniform("sColor"),
+
       use_gradient: !!this.gradient.length,
+      gradient_length: this.gradient.length,
+
+      has_boxes: !!this.boxes.length,
+      boxes_length: this.boxes.length,
+
+      has_active_boxes: !!this.activeBoxes.length,
+      active_boxes_length: this.activeBoxes.length,
+
+      [this.activeMode]: true,
     };
 
     this.needsUpdate = true;
-  }
-
-  dispose(): void {
-    this.#gradientTexture.dispose();
-
-    super.dispose();
   }
 }

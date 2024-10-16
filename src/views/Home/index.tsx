@@ -4,6 +4,7 @@ import { MainViewer, PointCloud, SideViewer } from "@/renderer";
 import BoxSvg from "@/assets/box.svg?react";
 import { ActionName } from "@/renderer/actions";
 import GUI from "three/examples/jsm/libs/lil-gui.module.min.js";
+import { Color } from "three";
 
 const Home = () => {
   const initialized = useRef(false);
@@ -68,36 +69,20 @@ const Home = () => {
         pointCloud.points.geometry.setAttribute("color", positionAttr);
 
         // // use_color
-        // pointCloud.points.material.color = 0xfff000;
-        // gui.addColor(pointCloud.points.material, "color");
+        // pointCloud.points.material.sColor = new Color(0xffffff);
+        // gui.addColor(pointCloud.points.material, "sColor");
 
         // use_gradient
-        const gradient = {
-          minColor: 0x00ffff,
-          maxColor: 0x0000ff,
-        };
         pointCloud.points.material.gradient = [
-          [0, gradient.minColor],
-          [1, gradient.maxColor],
+          { value: 0, color: new Color(0x00ffff) },
+          { value: 0.5, color: new Color(0xff0000) },
+          { value: 0.8, color: new Color(0x00ff00) },
+          { value: 1, color: new Color(0x0000ff) },
         ];
-        gui
-          .addColor(gradient, "minColor")
-          .name("gradient_1")
-          .onChange(() => {
-            pointCloud.points.material.gradient = [
-              [0, gradient.minColor],
-              [1, gradient.maxColor],
-            ];
-          });
-        gui
-          .addColor(gradient, "maxColor")
-          .name("gradient_2")
-          .onChange(() => {
-            pointCloud.points.material.gradient = [
-              [0, gradient.minColor],
-              [1, gradient.maxColor],
-            ];
-          });
+
+        pointCloud.points.material.gradient.forEach((item) => {
+          gui.addColor(item, "color").name(`gradient_${item.value}`);
+        });
 
         const gradientRange = {
           min: 0,
@@ -138,6 +123,7 @@ const Home = () => {
               gradientRange.max,
             ];
           });
+
         gui.onChange(() => {
           mainViewer.current?.render();
           overheadViewer.current?.render();

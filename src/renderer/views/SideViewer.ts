@@ -1,36 +1,34 @@
-import { Box3, Object3D, OrthographicCamera, Vector3 } from "three";
+import {
+  Box3,
+  Color,
+  LineSegments,
+  Object3D,
+  OrthographicCamera,
+  Vector3,
+} from "three";
 import Viewer from "./Viewer";
 import type PointCloud from "../PointCloud";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 
-export const axisUpInfo = {
-  x: {
-    yAxis: { axis: "z", dir: new Vector3(0, 0, 1) },
-    xAxis: { axis: "y", dir: new Vector3(0, 1, 0) },
-  },
-  "-x": {
-    yAxis: { axis: "z", dir: new Vector3(0, 0, 1) },
-    xAxis: { axis: "y", dir: new Vector3(0, -1, 0) },
-  },
-  z: {
-    yAxis: { axis: "x", dir: new Vector3(1, 0, 0) },
-    xAxis: { axis: "y", dir: new Vector3(0, -1, 0) },
-  },
-  // '-z': {
-  //     yAxis: { axis: 'y', dir: new Vector3(0, 1, 0) },
-  //     xAxis: { axis: 'x', dir: new Vector3(-1, 0, 0) },
-  // },
-  y: {
-    yAxis: { axis: "z", dir: new Vector3(0, 0, 1) },
-    xAxis: { axis: "x", dir: new Vector3(-1, 0, 0) },
-  },
-  "-y": {
-    yAxis: { axis: "z", dir: new Vector3(0, 0, 1) },
-    xAxis: { axis: "x", dir: new Vector3(1, 0, 0) },
-  },
+enum AxisMapping {
+  Front = "y",
+  Back = "-y",
+  Left = "-x",
+  Right = "x",
+  Top = "z",
+  Bottom = "-z",
+}
+
+export const dirMapping = {
+  [AxisMapping.Front]: new Vector3(0, 1, 0),
+  [AxisMapping.Back]: new Vector3(0, -1, 0),
+  [AxisMapping.Left]: new Vector3(-1, 0, 0),
+  [AxisMapping.Right]: new Vector3(1, 0, 0),
+  [AxisMapping.Top]: new Vector3(0, 0, 1),
+  [AxisMapping.Bottom]: new Vector3(0, 0, -1),
 };
 
-export type axisType = keyof typeof axisUpInfo;
+export type axisType = `${AxisMapping}`;
 
 interface SideViewerConfig {
   axis: axisType;
@@ -45,12 +43,13 @@ const defaultConfig: SideViewerConfig = {
 export default class SideViewer extends Viewer {
   config: SideViewerConfig;
 
+  dir: "x" | "y" | "z" = "z";
+
   camera: OrthographicCamera;
   controller: OrbitControls;
-  projectRect: Box3;
 
-  alignAxis: Vector3 = new Vector3();
-  object: Object3D | null = null;
+  activeBox: Object3D | null = null;
+  projectRect = new Box3();
 
   constructor(
     container: HTMLElement,
@@ -60,6 +59,7 @@ export default class SideViewer extends Viewer {
     super(container, pointCloud);
 
     this.camera = new OrthographicCamera(-2, 2, 2, -2, 0, 10);
+    this.camera.up.copy(this.pointCloud.up);
 
     this.controller = new OrbitControls(this.camera, this.renderer.domElement);
     this.controller.enableRotate = false;
@@ -72,8 +72,6 @@ export default class SideViewer extends Viewer {
       ...config,
     };
 
-    this.projectRect = new Box3();
-
     this.resize();
 
     this.setAxis(this.config.axis);
@@ -85,9 +83,9 @@ export default class SideViewer extends Viewer {
     this.pointCloud.addEventListener("select", (ev) => {
       const obj = ev.selection.findLast((o) => o instanceof Object3D);
       if (obj) {
-        this.fitObject(obj);
+        this.focalized(obj);
       } else {
-        this.object = null;
+        this.activeBox = null;
       }
       this.render();
     });
@@ -100,55 +98,56 @@ export default class SideViewer extends Viewer {
 
   setAxis(axis: axisType) {
     this.config.axis = axis;
-    this.alignAxis.set(0, 0, 0);
     const isInverse = axis.length === 2;
-    const axisValue = isInverse ? axis[1] : axis[0];
-    this.alignAxis[axisValue as "x" | "y" | "z"] = isInverse ? -0.5 : 0.5;
+    this.dir = (isInverse ? axis[1] : axis[0]) as "x" | "y" | "z";
 
-    if (this.object) this.fitObject();
+    if (this.activeBox) this.focalized();
 
     this.render();
   }
 
-  fitObject(object?: Object3D) {
-    if (object) this.object = object;
-    else if (this.object) object = this.object;
-    if (!object) return;
-    object.updateMatrixWorld();
+  focalized(activeBox?: Object3D) {
+    if (activeBox) this.activeBox = activeBox;
+    else if (this.activeBox) activeBox = this.activeBox;
+    if (!activeBox) return;
 
-    const temp = new Vector3();
-    temp.copy(this.alignAxis);
-    temp.applyMatrix4(object.matrixWorld);
-    this.camera.position.copy(temp);
+    const box = new Box3().setFromObject(activeBox);
+    const center = box.getCenter(new Vector3());
+    const size = box.getSize(new Vector3());
 
-    temp
-      .copy(axisUpInfo[this.config.axis].yAxis.dir)
-      .applyMatrix4(object.matrixWorld)
-      .sub(new Vector3().applyMatrix4(object.matrixWorld));
-
-    this.camera.up.copy(temp);
-    temp.set(0, 0, 0);
-    temp.applyMatrix4(object.matrixWorld);
-    this.camera.lookAt(temp);
+    const position = new Vector3().copy(center);
+    switch (this.dir) {
+      case "x":
+        position.multiply(new Vector3(0, size.y, 0));
+        break;
+      case "y":
+        position.multiply(new Vector3(size.x, 0, 0));
+        break;
+      case "z":
+        position.multiply(new Vector3(0, 0, size.z));
+        break;
+    }
+    // 更新相机位置
+    this.camera.position.copy(position);
+    this.camera.lookAt(center); // 使相机朝向物体中心
 
     this.updateProjectRect();
     this.updateCameraProject();
   }
 
   updateProjectRect() {
+    if (!this.activeBox) return;
     this.camera.updateMatrixWorld();
-    const { trimBox } = this.pointCloud;
-    trimBox.updateMatrixWorld();
-    if (!trimBox.geometry.boundingBox) trimBox.geometry.computeBoundingBox();
-    const bbox = trimBox.geometry.boundingBox!;
+    this.activeBox.updateMatrixWorld();
+    const bbox = new Box3().setFromObject(this.activeBox);
     const minProject = new Vector3().copy(bbox.min);
     const maxProject = new Vector3().copy(bbox.max);
 
     minProject
-      .applyMatrix4(trimBox.matrixWorld)
+      .applyMatrix4(this.activeBox.matrixWorld)
       .applyMatrix4(this.camera.matrixWorldInverse);
     maxProject
-      .applyMatrix4(trimBox.matrixWorld)
+      .applyMatrix4(this.activeBox.matrixWorld)
       .applyMatrix4(this.camera.matrixWorldInverse);
 
     const min = new Vector3();
@@ -188,7 +187,28 @@ export default class SideViewer extends Viewer {
     this.camera.right = cameraW / 2;
     this.camera.top = cameraH / 2;
     this.camera.bottom = -cameraH / 2;
+    this.camera.near = this.projectRect.min.z;
+    this.camera.far = this.projectRect.max.z - this.projectRect.min.z;
+
     this.camera.zoom = 1;
     this.camera.updateProjectionMatrix();
+  }
+
+  render() {
+    if (this.activeBox) {
+      this.pointCloud.points.material.activeMode = "clip_out_highlight";
+      const box = this.activeBox as LineSegments;
+      if (!box.geometry.boundingBox) box.geometry.computeBoundingBox();
+      this.pointCloud.points.material.activeBoxes = [
+        {
+          bbox: box.geometry.boundingBox!,
+          matrix: this.activeBox.matrixWorld.clone().invert(),
+          color: new Color(0x00ff00),
+          opacity: 1,
+        },
+      ];
+    }
+
+    super.render();
   }
 }
