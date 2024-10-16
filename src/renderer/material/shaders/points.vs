@@ -58,6 +58,10 @@ struct BoxesItem {
   uniform BoxesItem activeBoxes[active_boxes_length];
 #endif
 
+#ifndef highlight
+  uniform float clipMargin;
+#endif
+
 uniform float size;
 uniform vec3 sColor;
 uniform float opacity;
@@ -98,7 +102,13 @@ void main() {
     for (int i = 0; i < active_boxes_length; i++) {
       BoxesItem box = activeBoxes[i];
       vec4 boxPos = box.matrix * vec4(position, 1.0);
-      if (isInBox(boxPos.xyz, box.bbox.min, box.bbox.max)) {
+      vec3 min = box.bbox.min;
+      vec3 max = box.bbox.max;
+      #ifndef highlight
+        min -= vec3(clipMargin);
+        max += vec3(clipMargin);
+      #endif
+      if (isInBox(boxPos.xyz, min, max)) {
         insideBox = true;
         #if defined(highlight) || defined(clip_out_highlight)
           vColor = box.color;

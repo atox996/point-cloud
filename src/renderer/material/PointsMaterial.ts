@@ -20,6 +20,7 @@ export default class PointsMaterial extends RawShaderMaterial {
   @uniform declare boxes: IUniformValue<"boxes">;
   @uniform declare activeBoxes: IUniformValue<"activeBoxes">;
   @uniform declare activeMode: IUniformValue<"activeMode">;
+  @uniform declare clipMargin: IUniformValue<"clipMargin">;
 
   uniforms: IUniforms = {
     sColor: { value: null },
@@ -30,6 +31,7 @@ export default class PointsMaterial extends RawShaderMaterial {
     boxes: { value: [] },
     activeBoxes: { value: [] },
     activeMode: { value: "highlight" },
+    clipMargin: { value: 1 },
   };
 
   defines = {} as IDefines;
@@ -49,6 +51,7 @@ export default class PointsMaterial extends RawShaderMaterial {
     this.boxes = parameters.boxes ?? this.getUniform("boxes");
     this.activeBoxes = parameters.activeBoxes ?? this.getUniform("activeBoxes");
     this.activeMode = parameters.activeMode ?? this.getUniform("activeMode");
+    this.clipMargin = parameters.clipMargin ?? this.getUniform("clipMargin");
 
     this.transparent = true;
 

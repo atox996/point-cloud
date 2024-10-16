@@ -28,6 +28,7 @@ export type IUniforms = {
   boxes: IUniform<IBox[]>;
   activeBoxes: IUniform<IBox[]>;
   activeMode: IUniform<`${ActiveMode}`>;
+  clipMargin: IUniform<number>;
 };
 
 export type IUniformKeys = keyof IUniforms;
