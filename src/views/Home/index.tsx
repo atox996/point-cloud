@@ -60,6 +60,7 @@ const Home = () => {
         console.log(pointCloud.points);
 
         const gui = new GUI();
+        gui.domElement.style.left = "40px";
         gui.add(pointCloud.points.material, "size", 1, 10);
         gui.add(pointCloud.points.material, "opacity", 0, 1, 0.01);
 
