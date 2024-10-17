@@ -1,4 +1,5 @@
 import {
+  AxesHelper,
   BoxGeometry,
   BufferGeometry,
   EdgesGeometry,
@@ -9,7 +10,6 @@ import {
   Object3D,
   Points,
   Scene,
-  Vector3,
   type BaseEvent,
 } from "three";
 import { PCDLoader } from "three/examples/jsm/loaders/PCDLoader.js";
@@ -41,7 +41,6 @@ function createGeometry(data: PointGeometryData = {}) {
 }
 
 export default class PointCloud extends EventDispatcher<TEventMap> {
-  up = new Vector3(0, 0, 1);
   scene: Scene;
   points: Points<BufferGeometry, PointsMaterial>;
   trimBox: LineSegments<EdgesGeometry, LineBasicMaterial>;
@@ -51,19 +50,20 @@ export default class PointCloud extends EventDispatcher<TEventMap> {
     super();
 
     this.scene = new Scene();
-    this.scene.up.copy(this.up);
 
     this.points = new Points(createGeometry(), new PointsMaterial());
 
-    const geometry = new BoxGeometry(11, 3, 3);
+    const geometry = new BoxGeometry(5, 4, 3);
     const edges = new EdgesGeometry(geometry);
     this.trimBox = new LineSegments(
       edges,
-      new LineBasicMaterial({ color: 0xffffff }),
+      new LineBasicMaterial({ color: 0x00ff00 }),
     );
-    this.trimBox.position.set(0, 0, geometry.parameters.depth / 2);
-    // this.trimBox.rotation.set(0, 0, Math.PI / 4);
-    this.scene.add(this.points, this.trimBox);
+    this.trimBox.position.set(10, 5, 0);
+
+    const axesHelper = new AxesHelper(5);
+
+    this.scene.add(this.points, this.trimBox, axesHelper);
   }
 
   async load(url: string, onProgress?: (e: ProgressEvent) => void) {

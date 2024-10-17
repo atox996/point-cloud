@@ -1,22 +1,42 @@
-import { LineSegments, Color, Object3D, PerspectiveCamera } from "three";
+import {
+  LineSegments,
+  Color,
+  Object3D,
+  PerspectiveCamera,
+  type Vector3Like,
+} from "three";
 import type PointCloud from "../PointCloud";
 import Viewer from "./Viewer";
 import { ActionName } from "../actions";
 
+interface ViewerConfig {
+  up?: Vector3Like;
+}
+
 const defaultActions = [ActionName.Create, ActionName.OrbitControls];
 
 export default class MainViewer extends Viewer {
+  config: ViewerConfig;
+
   camera: PerspectiveCamera;
 
   activeBox: Object3D | null = null;
 
-  constructor(container: HTMLElement, pointCloud: PointCloud) {
+  constructor(
+    container: HTMLElement,
+    pointCloud: PointCloud,
+    config?: Partial<ViewerConfig>,
+  ) {
     super(container, pointCloud);
 
+    this.config = {
+      ...config,
+    };
+
     this.camera = new PerspectiveCamera(35, this.width / this.height, 1, 30000);
+    if (this.config.up) this.camera.up.copy(this.config.up);
 
     this.camera.position.set(0, 0, 100);
-    this.camera.up.copy(this.pointCloud.up);
     this.camera.lookAt(0, 0, 0);
 
     this.setActions(defaultActions);
