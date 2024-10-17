@@ -1,4 +1,4 @@
-import { RawShaderMaterial } from "three";
+import { RawShaderMaterial, Vector3 } from "three";
 
 import vertexShader from "./shaders/points.vs?raw";
 import fragmentShader from "./shaders/points.fs?raw";
@@ -31,7 +31,7 @@ export default class PointsMaterial extends RawShaderMaterial {
     boxes: { value: [] },
     activeBoxes: { value: [] },
     activeMode: { value: "highlight" },
-    clipMargin: { value: 1 },
+    clipMargin: { value: new Vector3(1, 1, 1) },
   };
 
   defines = {} as IDefines;

@@ -59,7 +59,7 @@ struct BoxesItem {
 #endif
 
 #ifndef highlight
-  uniform float clipMargin;
+  uniform vec3 clipMargin;
 #endif
 
 uniform float size;
@@ -105,8 +105,8 @@ void main() {
       vec3 min = box.bbox.min;
       vec3 max = box.bbox.max;
       #ifndef highlight
-        min -= vec3(clipMargin);
-        max += vec3(clipMargin);
+        min -= clipMargin;
+        max += clipMargin;
       #endif
       if (isInBox(boxPos.xyz, min, max)) {
         insideBox = true;

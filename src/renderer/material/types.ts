@@ -1,4 +1,11 @@
-import type { Box3, Color, IUniform, Matrix4, Vector2Tuple } from "three";
+import type {
+  Box3,
+  Color,
+  IUniform,
+  Matrix4,
+  Vector2Tuple,
+  Vector3Like,
+} from "three";
 
 export type IGradient = { value: number; color: Color }[];
 
@@ -28,7 +35,7 @@ export type IUniforms = {
   boxes: IUniform<IBox[]>;
   activeBoxes: IUniform<IBox[]>;
   activeMode: IUniform<`${ActiveMode}`>;
-  clipMargin: IUniform<number>;
+  clipMargin: IUniform<Vector3Like>;
 };
 
 export type IUniformKeys = keyof IUniforms;
