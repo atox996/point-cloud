@@ -8,6 +8,7 @@ import {
 import type PointCloud from "../PointCloud";
 import Viewer from "./Viewer";
 import { ActionName } from "../actions";
+import type { Box3D } from "../typings";
 
 interface ViewerConfig {
   up?: Vector3Like;
@@ -20,7 +21,7 @@ export default class MainViewer extends Viewer {
 
   camera: PerspectiveCamera;
 
-  activeBox: Object3D | null = null;
+  activeBox?: Box3D;
 
   constructor(
     container: HTMLElement,
@@ -50,9 +51,9 @@ export default class MainViewer extends Viewer {
     this.pointCloud.addEventListener("select", (ev) => {
       const obj = ev.selection.findLast((o) => o instanceof Object3D);
       if (obj) {
-        this.focalized(obj);
+        this.focalized(obj as Box3D);
       } else {
-        this.activeBox = null;
+        this.activeBox = undefined;
       }
       this.render();
     });
@@ -65,11 +66,12 @@ export default class MainViewer extends Viewer {
     super.resize();
   }
 
-  focalized(activeBox?: Object3D) {
+  focalized(activeBox?: Box3D) {
     if (activeBox) this.activeBox = activeBox;
     else if (this.activeBox) activeBox = this.activeBox;
     if (!activeBox) return;
-    console.log(activeBox);
+
+    // TODO: 将相机移至激活对象中心
   }
 
   render() {

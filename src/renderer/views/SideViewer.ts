@@ -1,5 +1,5 @@
 import {
-  Box3,
+  BufferGeometry,
   CameraHelper,
   Color,
   LineSegments,
@@ -11,13 +11,41 @@ import {
 import Viewer from "./Viewer";
 import type PointCloud from "../PointCloud";
 import { ActionName } from "../actions";
-import OrbitControlsAction from "../actions/OrbitControlsAction";
+import { getBoundingBoxInCameraView } from "../utils";
+import type { PositiveAxis } from "../typings";
 
-export type axisType = "x" | "-x" | "y" | "-y" | "z" | "-z";
+export const axisUpInfo = {
+  x: {
+    yAxis: { axis: "z", dir: new Vector3(0, 0, 1) },
+    xAxis: { axis: "y", dir: new Vector3(0, 1, 0) },
+  },
+  "-x": {
+    yAxis: { axis: "z", dir: new Vector3(0, 0, 1) },
+    xAxis: { axis: "y", dir: new Vector3(0, -1, 0) },
+  },
+  z: {
+    yAxis: { axis: "x", dir: new Vector3(1, 0, 0) },
+    xAxis: { axis: "y", dir: new Vector3(0, -1, 0) },
+  },
+  // '-z': {
+  //     yAxis: { axis: 'y', dir: new Vector3(0, 1, 0) },
+  //     xAxis: { axis: 'x', dir: new Vector3(-1, 0, 0) },
+  // },
+  y: {
+    yAxis: { axis: "z", dir: new Vector3(0, 0, 1) },
+    xAxis: { axis: "x", dir: new Vector3(-1, 0, 0) },
+  },
+  "-y": {
+    yAxis: { axis: "z", dir: new Vector3(0, 0, 1) },
+    xAxis: { axis: "x", dir: new Vector3(1, 0, 0) },
+  },
+};
+
+export type AxisType = keyof typeof axisUpInfo;
 
 interface ViewerConfig {
   up?: Vector3Like;
-  axis: axisType;
+  axis: AxisType;
   // 聚焦时窗口边缘留出一定的空间
   paddingPercent: number;
 }
@@ -29,13 +57,17 @@ const defaultConfig: ViewerConfig = {
 
 const defaultActions = [ActionName.OrbitControls];
 
+interface Box3D extends Object3D {
+  geometry: BufferGeometry;
+}
+
 export default class SideViewer extends Viewer {
   config: ViewerConfig;
 
   camera: OrthographicCamera;
   cameraHelper: CameraHelper;
 
-  activeBox: Object3D | null = null;
+  activeBox?: Box3D;
 
   constructor(
     container: HTMLElement,
@@ -59,9 +91,7 @@ export default class SideViewer extends Viewer {
     this.setActions(defaultActions);
 
     const controllerAction = this.getAction(ActionName.OrbitControls);
-    if (controllerAction instanceof OrbitControlsAction) {
-      controllerAction.controller.enableRotate = false;
-    }
+    if (controllerAction) controllerAction.controller.enableRotate = false;
 
     this.resize();
 
@@ -74,9 +104,9 @@ export default class SideViewer extends Viewer {
     this.pointCloud.addEventListener("select", (ev) => {
       const obj = ev.selection.findLast((o) => o instanceof Object3D);
       if (obj) {
-        this.focalized(obj);
+        this.focalized(obj as Box3D);
       } else {
-        this.activeBox = null;
+        this.activeBox = undefined;
       }
       this.render();
     });
@@ -89,70 +119,60 @@ export default class SideViewer extends Viewer {
     super.resize();
   }
 
-  setAxis(axis: axisType) {
+  setAxis(axis: AxisType) {
     this.config.axis = axis;
-
-    if (this.activeBox) {
-      this.focalized();
-      this.render();
-    }
+    this.focalized(this.activeBox);
+    this.render();
   }
 
-  focalized(activeBox?: Object3D) {
+  focalized(activeBox?: Box3D) {
     if (activeBox) this.activeBox = activeBox;
     else if (this.activeBox) activeBox = this.activeBox;
     if (!activeBox) return;
 
-    console.log(activeBox);
-    // this.updateCamera();
-    this.cameraHelper.update();
-  }
-
-  computedProjectRect() {
-    const { activeBox, camera } = this;
-    if (!activeBox) return;
-    camera.updateMatrixWorld();
     activeBox.updateMatrixWorld();
-    const box = activeBox as LineSegments;
-    if (!box.geometry.boundingBox) box.geometry.computeBoundingBox();
-    const boundingBox = box.geometry.boundingBox!;
-    const minProject = boundingBox.min.clone();
-    const maxProject = boundingBox.max.clone();
-    minProject
-      .applyMatrix4(box.matrixWorld)
-      .applyMatrix4(this.camera.matrixWorldInverse);
-    maxProject
-      .applyMatrix4(box.matrixWorld)
-      .applyMatrix4(this.camera.matrixWorldInverse);
 
-    const xMin = Math.min(minProject.x, maxProject.x);
-    const xMax = Math.max(minProject.x, maxProject.x);
-    const yMin = Math.min(minProject.y, maxProject.y);
-    const yMax = Math.max(minProject.y, maxProject.y);
-    const zMin = Math.min(minProject.z, maxProject.z);
-    const zMax = Math.max(minProject.z, maxProject.z);
+    const alignAxis = new Vector3();
+    const isInverse = this.config.axis.startsWith("-");
+    const axisValue = this.config.axis.slice(
+      isInverse ? 1 : 0,
+    ) as PositiveAxis<AxisType>;
 
-    const min = new Vector3(xMin, yMin, zMin);
-    const max = new Vector3(xMax, yMax, zMax);
-    return new Box3(min, max);
-  }
+    alignAxis[axisValue] = isInverse ? -0.5 : 0.5;
 
-  updateCamera() {
-    const projectRect = this.computedProjectRect()!;
-    const center = projectRect.getCenter(new Vector3());
-    this.camera.position.copy(center);
-    this.camera.lookAt(center);
+    const temp = new Vector3();
+    temp.copy(alignAxis);
+    temp.applyMatrix4(activeBox.matrixWorld);
+    this.camera.position.copy(temp);
+
+    temp
+      .copy(axisUpInfo[this.config.axis].yAxis.dir)
+      .applyMatrix4(activeBox.matrixWorld)
+      .sub(new Vector3().applyMatrix4(activeBox.matrixWorld));
+    this.camera.up.copy(temp);
+
+    temp.set(0, 0, 0);
+    temp.applyMatrix4(activeBox.matrixWorld);
+    this.camera.lookAt(temp);
+    const controllerAction = this.getAction(ActionName.OrbitControls);
+    if (controllerAction) {
+      controllerAction.controller.target.copy(temp);
+      controllerAction.controller.update();
+    }
+
     this.updateCameraProject();
   }
 
   updateCameraProject() {
-    const { min, max } = this.computedProjectRect()!;
-
-    const rectWidth = max.x - min.x;
-    const rectHeight = max.y - min.y;
+    if (!this.activeBox) return;
+    const bbox = getBoundingBoxInCameraView(this.activeBox, this.camera);
+    const rectWidth = bbox.max.x - bbox.min.x;
+    const rectHeight = bbox.max.y - bbox.min.y;
     const aspect = this.width / this.height;
+
     const padding =
       Math.min(rectWidth, rectHeight) * this.config.paddingPercent;
+    // let padding = (200 * rectWidth) / this.width;
     const cameraW = Math.max(
       rectWidth + padding,
       (rectHeight + padding) * aspect,
@@ -161,15 +181,19 @@ export default class SideViewer extends Viewer {
       rectHeight + padding,
       (rectWidth + padding) / aspect,
     );
+
     this.camera.left = -cameraW / 2;
     this.camera.right = cameraW / 2;
     this.camera.top = cameraH / 2;
     this.camera.bottom = -cameraH / 2;
-    this.camera.near = min.z - max.z;
-    this.camera.far = max.z - min.z;
-
-    // 更新投影矩阵
+    // debugger
+    this.camera.far = bbox.max.z - bbox.min.z;
     this.camera.updateProjectionMatrix();
+
+    // this.camera.position.add(this.cameraOffset);
+    // this.camera.updateMatrixWorld();
+    // this.camera.far = 0;
+    this.cameraHelper?.update();
   }
 
   render() {

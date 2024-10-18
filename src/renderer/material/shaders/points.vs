@@ -26,10 +26,10 @@ precision mediump int;
     } else if (zNormalized > gradient[gradient_length-1].value) {
       finalColor = gradient[gradient_length-1].color;
     } else {
-      for (int i = 0; i < gradient_length; i++) {
+      for (int i = 0; i < gradient_length - 1; i++) {
         if (zNormalized >= gradient[i].value && zNormalized <= gradient[i + 1].value) {
           float t = (zNormalized - gradient[i].value) / (gradient[i + 1].value - gradient[i].value);
-          finalColor = mix(gradient[i].color, gradient[i+1].color, t);
+          finalColor = mix(gradient[i].color, gradient[i + 1].color, t);
           break;
         }
       }

@@ -53,13 +53,14 @@ export default class PointCloud extends EventDispatcher<TEventMap> {
 
     this.points = new Points(createGeometry(), new PointsMaterial());
 
-    const geometry = new BoxGeometry(5, 4, 3);
+    const geometry = new BoxGeometry(4.68, 2.03, 1.55);
     const edges = new EdgesGeometry(geometry);
     this.trimBox = new LineSegments(
       edges,
       new LineBasicMaterial({ color: 0x00ff00 }),
     );
-    this.trimBox.position.set(10, 5, 0);
+    this.trimBox.position.set(9.02, 14.08, 0.65);
+    this.trimBox.rotation.set(0, 0, 44.75 * (Math.PI / 180));
 
     const axesHelper = new AxesHelper(5);
 

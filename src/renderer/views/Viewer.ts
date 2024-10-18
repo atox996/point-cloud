@@ -1,13 +1,13 @@
 import { Camera, EventDispatcher, WebGLRenderer } from "three";
 import type PointCloud from "../PointCloud";
-import { ActionName, Actions, Action } from "../actions";
+import { ActionName, Actions, type ActionInstanceMap } from "../actions";
 
 export default abstract class Viewer extends EventDispatcher {
   container: HTMLElement;
   renderer: WebGLRenderer;
   pointCloud: PointCloud;
   actions: ActionName[] = [];
-  actionMap = new Map<ActionName, Action>();
+  actionMap = new Map<ActionName, ActionInstanceMap[ActionName]>();
 
   get width() {
     return this.container.clientWidth;
@@ -45,8 +45,8 @@ export default abstract class Viewer extends EventDispatcher {
     this.render();
   }
 
-  getAction(name: ActionName) {
-    return this.actionMap.get(name);
+  getAction<T extends ActionName>(name: T) {
+    return this.actionMap.get(name) as ActionInstanceMap[T] | undefined;
   }
 
   setActions(actionNames: ActionName[]) {
