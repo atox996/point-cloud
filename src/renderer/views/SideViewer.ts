@@ -197,7 +197,8 @@ export default class SideViewer extends Viewer {
   }
 
   render() {
-    this.pointCloud.points.material.activeMode = "clip_out_highlight";
+    this.pointCloud.points.material.activeMode = 2;
+    this.pointCloud.points.material.cutPadding = 5;
 
     if (this.activeBox) {
       const box = this.activeBox as LineSegments;

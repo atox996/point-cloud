@@ -1,13 +1,12 @@
-import type {
-  Box3,
-  Color,
-  IUniform,
-  Matrix4,
-  Vector2Tuple,
-  Vector3Like,
-} from "three";
+import type { Box3, Color, IUniform, Matrix4, Vector2Tuple } from "three";
 
-export type IGradient = { value: number; color: Color }[];
+export enum ColorMode {
+  RGB,
+  SINGLE,
+  GRADIENT,
+}
+
+export type IGradient = { value: number; color: Color };
 
 export interface IBox {
   bbox: Box3;
@@ -16,26 +15,27 @@ export interface IBox {
   opacity: number;
 }
 
-export type ActiveMode =
-  | "highlight"
-  | "clip_in"
-  | "clip_out"
-  | "clip_out_highlight";
+export enum ActiveMode {
+  HIGHLIGHT,
+  CUT_INSIDE,
+  CUT_OUTSIDE,
+}
 
 export type IParameters = {
   [K in IUniformKeys]?: IUniformValue<K>;
 };
 
 export type IUniforms = {
-  sColor: IUniform<Color | null>;
   size: IUniform<number>;
   opacity: IUniform<number>;
-  gradient: IUniform<IGradient>;
+  colorMode: IUniform<ColorMode>;
+  sColor: IUniform<Color>;
+  gradient: IUniform<IGradient[]>;
   gradientRange: IUniform<Vector2Tuple>;
   boxes: IUniform<IBox[]>;
   activeBoxes: IUniform<IBox[]>;
-  activeMode: IUniform<`${ActiveMode}`>;
-  clipMargin: IUniform<Vector3Like>;
+  activeMode: IUniform<ActiveMode>;
+  cutPadding: IUniform<number>;
 };
 
 export type IUniformKeys = keyof IUniforms;
@@ -43,14 +43,8 @@ export type IUniformValue<K extends IUniformKeys> = IUniforms[K]["value"];
 
 export interface IDefines {
   use_raw_shader?: boolean;
-  use_color?: boolean;
 
-  use_gradient?: boolean;
-  gradient_length: number;
-
-  has_boxes?: boolean;
-  boxes_length: number;
-
-  has_active_boxes?: boolean;
-  active_boxes_length: number;
+  gradient_length?: number;
+  boxes_length?: number;
+  active_boxes_length?: number;
 }

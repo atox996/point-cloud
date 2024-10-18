@@ -68,103 +68,101 @@ const Home = () => {
         gui.domElement.style.left = "40px";
         gui.add(pointCloud.points.material, "size", 1, 10);
         gui.add(pointCloud.points.material, "opacity", 0, 1, 0.01);
-        const colorParams: {
-          colorMode: "default" | "sColor" | "gradient";
-        } = {
-          colorMode: "gradient",
-        };
+        const colorFolder = gui.addFolder("color");
         const preControllers: unknown[] = [];
-        const updateColorMode = (value: (typeof colorParams)["colorMode"]) => {
-          preControllers.forEach((item) => (item as GUI).destroy());
-          preControllers.length = 0;
-          if (value === "default") {
-            const { geometry } = pointCloud.points;
-            const positionAttr =
-              geometry.getAttribute("color") ||
-              geometry.getAttribute("position");
-            geometry.setAttribute("color", positionAttr);
-            pointCloud.points.material.sColor = null;
-          } else if (value === "sColor") {
-            // use_color
-            pointCloud.points.material.sColor = new Color(0xffffff);
-            const sColorController = gui.addColor(
-              pointCloud.points.material,
-              "sColor",
-            );
-            preControllers.push(sColorController);
-          } else if (value === "gradient") {
-            // use_gradient
-            pointCloud.points.material.gradient = [
-              { value: 0, color: new Color(0x99ccff) },
-              { value: 0.2, color: new Color(0x6699ff) },
-              { value: 0.4, color: new Color(0x3366ff) },
-              { value: 0.6, color: new Color(0x0033ff) },
-              { value: 0.8, color: new Color(0x0000cc) },
-              { value: 1, color: new Color(0x000099) },
-            ];
-
-            pointCloud.points.material.gradient.forEach((item) => {
-              const colorController = gui
-                .addColor(item, "color")
-                .name(`gradient_${item.value}`);
-              preControllers.push(colorController);
-            });
-
-            const gradientRange = {
-              min: 0,
-              max: 5,
-            };
-            pointCloud.points.material.gradientRange = [
-              gradientRange.min,
-              gradientRange.max,
-            ];
-            const gradientRange_1 = gui
-              .add(gradientRange, "min", -10, gradientRange.max)
-              .name("gradientRange_1")
-              .onChange(() => {
-                if (gradientRange_1._max !== gradientRange.max) {
-                  gradientRange_1.max(gradientRange.max);
-                  gradientRange_1.setValue(gradientRange_1.getValue());
-                }
-                if (gradientRange_2._min !== gradientRange.min) {
-                  gradientRange_2.min(gradientRange.min);
-                  gradientRange_2.setValue(gradientRange_2.getValue());
-                }
-                pointCloud.points.material.gradientRange = [
-                  gradientRange.min,
-                  gradientRange.max,
-                ];
-              });
-            const gradientRange_2 = gui
-              .add(gradientRange, "max", gradientRange.min, 10)
-              .name("gradientRange_2")
-              .onChange(() => {
-                if (gradientRange_1._max !== gradientRange.max) {
-                  gradientRange_1.max(gradientRange.max);
-                  gradientRange_1.setValue(gradientRange_1.getValue());
-                }
-                if (gradientRange_2._min !== gradientRange.min) {
-                  gradientRange_2.min(gradientRange.min);
-                  gradientRange_2.setValue(gradientRange_2.getValue());
-                }
-
-                pointCloud.points.material.gradientRange = [
-                  gradientRange.min,
-                  gradientRange.max,
-                ];
-              });
-            preControllers.push(gradientRange_1, gradientRange_2);
-          }
-        };
-        gui
-          .add(colorParams, "colorMode", {
-            默认: "default",
-            纯色: "sColor",
-            渐变: "gradient",
+        colorFolder
+          .add(pointCloud.points.material, "colorMode", {
+            默认: 0,
+            纯色: 1,
+            渐变: 2,
           })
           .name("颜色模式")
-          .onChange(updateColorMode);
-        updateColorMode(colorParams.colorMode);
+          .onChange((value) => {
+            preControllers.forEach((item) => (item as GUI).destroy());
+            preControllers.length = 0;
+            if (value === 0) {
+              const { geometry } = pointCloud.points;
+              const positionAttr =
+                geometry.getAttribute("color") ||
+                geometry.getAttribute("position");
+              geometry.setAttribute("color", positionAttr);
+            } else if (value === 1) {
+              const sColorController = colorFolder.addColor(
+                pointCloud.points.material,
+                "sColor",
+              );
+              preControllers.push(sColorController);
+            } else if (value === 2) {
+              // use_gradient
+              pointCloud.points.material.gradient = [
+                { value: 0, color: new Color(0x99ccff) },
+                { value: 0.2, color: new Color(0x6699ff) },
+                { value: 0.4, color: new Color(0x3366ff) },
+                { value: 0.6, color: new Color(0x0033ff) },
+                { value: 0.8, color: new Color(0x0000cc) },
+                { value: 1, color: new Color(0x000099) },
+              ];
+
+              pointCloud.points.material.gradient.forEach((item) => {
+                const colorController = colorFolder
+                  .addColor(item, "color")
+                  .name(`gradient_${item.value}`);
+                preControllers.push(colorController);
+              });
+
+              const gradientRange = {
+                min: 0,
+                max: 5,
+              };
+              pointCloud.points.material.gradientRange = [
+                gradientRange.min,
+                gradientRange.max,
+              ];
+              const gradientRange_1 = colorFolder
+                .add(gradientRange, "min", -10, gradientRange.max)
+                .name("gradientRange_1")
+                .onChange(() => {
+                  if (gradientRange_1._max !== gradientRange.max) {
+                    gradientRange_1.max(gradientRange.max);
+                    gradientRange_1.setValue(gradientRange_1.getValue());
+                  }
+                  if (gradientRange_2._min !== gradientRange.min) {
+                    gradientRange_2.min(gradientRange.min);
+                    gradientRange_2.setValue(gradientRange_2.getValue());
+                  }
+                  pointCloud.points.material.gradientRange = [
+                    gradientRange.min,
+                    gradientRange.max,
+                  ];
+                });
+              const gradientRange_2 = colorFolder
+                .add(gradientRange, "max", gradientRange.min, 10)
+                .name("gradientRange_2")
+                .onChange(() => {
+                  if (gradientRange_1._max !== gradientRange.max) {
+                    gradientRange_1.max(gradientRange.max);
+                    gradientRange_1.setValue(gradientRange_1.getValue());
+                  }
+                  if (gradientRange_2._min !== gradientRange.min) {
+                    gradientRange_2.min(gradientRange.min);
+                    gradientRange_2.setValue(gradientRange_2.getValue());
+                  }
+
+                  pointCloud.points.material.gradientRange = [
+                    gradientRange.min,
+                    gradientRange.max,
+                  ];
+                });
+              preControllers.push(gradientRange_1, gradientRange_2);
+            }
+          })
+          .load(2);
+        gui.onChange(() => {
+          mainViewer.current?.render();
+          overheadViewer.current?.render();
+          sideViewer.current?.render();
+          rearViewer.current?.render();
+        });
         gui.onFinishChange(() => {
           mainViewer.current?.render();
           overheadViewer.current?.render();

@@ -8,7 +8,7 @@ precision mediump int;
   attribute vec3 color;
 #endif
 
-#ifdef use_gradient
+#ifdef gradient_length
   struct GradientItem {
     float value;
     vec3 color;
@@ -50,21 +50,21 @@ struct BoxesItem {
   float opacity;
 };
 
-#ifdef has_boxes
+#ifdef boxes_length
   uniform BoxesItem boxes[boxes_length];
 #endif
 
-#ifdef has_active_boxes
+#ifdef active_boxes_length
   uniform BoxesItem activeBoxes[active_boxes_length];
 #endif
 
-#ifndef highlight
-  uniform vec3 clipMargin;
-#endif
 
 uniform float size;
-uniform vec3 sColor;
 uniform float opacity;
+uniform int colorMode;
+uniform vec3 sColor;
+uniform int activeMode;
+uniform float cutPadding;
 
 varying vec3 vColor;
 varying float vOpacity;
@@ -79,53 +79,50 @@ void main() {
   vOpacity = opacity;
 
   vColor = color;
-  #ifdef use_color
+  if (colorMode == 1) {
     vColor = sColor;
-  #elif defined use_gradient
-    vColor = getGradientByZ();
-  #endif
+  } else if (colorMode == 2) {
+    #ifdef gradient_length
+      vColor = getGradientByZ();
+    #endif
+  }
   
-  #ifdef has_boxes
+  #ifdef boxes_length
     for (int i = 0; i < boxes_length; i++) {
       BoxesItem box = boxes[i];
+      vec3 min = box.bbox.min;
+      vec3 max = box.bbox.max;
       vec4 boxPos = box.matrix * vec4(position, 1.0);
-      if (isInBox(boxPos.xyz, box.bbox.min, box.bbox.max)) {
+      if (isInBox(boxPos.xyz, min, max)) {
+        vColor = box.color;
+        vOpacity = box.opacity;
+      }
+    }
+  #endif
+
+  #ifdef active_boxes_length
+    bool insideBox = false;
+    for (int i = 0; i < active_boxes_length; i++) {
+      BoxesItem box = activeBoxes[i];
+      vec3 min = box.bbox.min;
+      vec3 max = box.bbox.max;
+      vec4 boxPos = box.matrix * vec4(position, 1.0);
+      if (isInBox(boxPos.xyz, min, max)) {
+        insideBox = true;
         vColor = box.color;
         vOpacity = box.opacity;
         break;
       }
-    }
-  #endif
-  
-  #ifdef has_active_boxes
-    bool insideBox = false;
-    for (int i = 0; i < active_boxes_length; i++) {
-      BoxesItem box = activeBoxes[i];
-      vec4 boxPos = box.matrix * vec4(position, 1.0);
-      vec3 min = box.bbox.min;
-      vec3 max = box.bbox.max;
-      #ifndef highlight
-        min -= clipMargin;
-        max += clipMargin;
-      #endif
-      if (isInBox(boxPos.xyz, min, max)) {
+      vec3 cutPaddingMin = min - vec3(cutPadding);
+      vec3 cutPaddingMax = max + vec3(cutPadding);
+      if (isInBox(boxPos.xyz, cutPaddingMin, cutPaddingMax)) {
         insideBox = true;
-        #if defined(highlight) || defined(clip_out_highlight)
-          vColor = box.color;
-          vOpacity = box.opacity;
-        #endif
         break;
       }
     }
-    #if defined(clip_out) || defined(clip_out_highlight)
-      if (!insideBox) {
-        vOpacity = 0.0;
-      }
-    #elif defined clip_in
-      if (insideBox) {
-        vOpacity = 0.0;
-      }
-    #endif
+    if (activeMode == 1 && insideBox || activeMode == 2 && !insideBox) {
+      vOpacity = 0.0;
+    }
   #endif
   
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);

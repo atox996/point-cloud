@@ -75,7 +75,8 @@ export default class MainViewer extends Viewer {
   }
 
   render() {
-    this.pointCloud.points.material.activeMode = "highlight";
+    this.pointCloud.points.material.activeMode = 0;
+    this.pointCloud.points.material.cutPadding = 0;
     this.pointCloud.points.material.activeBoxes = this.pointCloud.selection.map(
       (o) => {
         const box = o as LineSegments;

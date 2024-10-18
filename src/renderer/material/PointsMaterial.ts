@@ -1,4 +1,4 @@
-import { RawShaderMaterial, Vector3 } from "three";
+import { Color, RawShaderMaterial } from "three";
 
 import vertexShader from "./shaders/points.vs?raw";
 import fragmentShader from "./shaders/points.fs?raw";
@@ -12,26 +12,28 @@ import type {
 import { uniform } from "./utils";
 
 export default class PointsMaterial extends RawShaderMaterial {
-  @uniform declare sColor: IUniformValue<"sColor">;
   @uniform declare size: IUniformValue<"size">;
   @uniform declare opacity: IUniformValue<"opacity">;
+  @uniform declare colorMode: IUniformValue<"colorMode">;
+  @uniform declare sColor: IUniformValue<"sColor">;
   @uniform declare gradient: IUniformValue<"gradient">;
   @uniform declare gradientRange: IUniformValue<"gradientRange">;
   @uniform declare boxes: IUniformValue<"boxes">;
   @uniform declare activeBoxes: IUniformValue<"activeBoxes">;
   @uniform declare activeMode: IUniformValue<"activeMode">;
-  @uniform declare clipMargin: IUniformValue<"clipMargin">;
+  @uniform declare cutPadding: IUniformValue<"cutPadding">;
 
   uniforms: IUniforms = {
-    sColor: { value: null },
     size: { value: 1 },
     opacity: { value: 1 },
+    colorMode: { value: 0 },
+    sColor: { value: new Color(0xffffff) },
     gradient: { value: [] },
     gradientRange: { value: [0, 1] },
     boxes: { value: [] },
     activeBoxes: { value: [] },
-    activeMode: { value: "highlight" },
-    clipMargin: { value: new Vector3(1, 1, 1) },
+    activeMode: { value: 0 },
+    cutPadding: { value: 0 },
   };
 
   defines = {} as IDefines;
@@ -42,16 +44,17 @@ export default class PointsMaterial extends RawShaderMaterial {
       fragmentShader,
     });
 
-    this.sColor = parameters.sColor ?? this.getUniform("sColor");
     this.size = parameters.size ?? this.getUniform("size");
     this.opacity = parameters.opacity ?? this.getUniform("opacity");
+    this.colorMode = parameters.colorMode ?? this.getUniform("colorMode");
+    this.sColor = parameters.sColor ?? this.getUniform("sColor");
     this.gradient = parameters.gradient ?? this.getUniform("gradient");
     this.gradientRange =
       parameters.gradientRange ?? this.getUniform("gradientRange");
     this.boxes = parameters.boxes ?? this.getUniform("boxes");
     this.activeBoxes = parameters.activeBoxes ?? this.getUniform("activeBoxes");
     this.activeMode = parameters.activeMode ?? this.getUniform("activeMode");
-    this.clipMargin = parameters.clipMargin ?? this.getUniform("clipMargin");
+    this.cutPadding = parameters.cutPadding ?? this.getUniform("cutPadding");
 
     this.transparent = true;
 
@@ -70,21 +73,23 @@ export default class PointsMaterial extends RawShaderMaterial {
   }
 
   update() {
-    this.defines = {
-      use_raw_shader: "isRawShaderMaterial" in this,
-      use_color: !this.gradient.length && !!this.getUniform("sColor"),
+    this.defines = {};
 
-      use_gradient: !!this.gradient.length,
-      gradient_length: this.gradient.length,
+    if ("isRawShaderMaterial" in this) {
+      this.defines.use_raw_shader = true;
+    }
 
-      has_boxes: !!this.boxes.length,
-      boxes_length: this.boxes.length,
+    if (this.gradient.length) {
+      this.defines.gradient_length = this.gradient.length;
+    }
 
-      has_active_boxes: !!this.activeBoxes.length,
-      active_boxes_length: this.activeBoxes.length,
+    if (this.boxes.length) {
+      this.defines.boxes_length = this.boxes.length;
+    }
 
-      [this.activeMode]: true,
-    };
+    if (this.activeBoxes.length) {
+      this.defines.active_boxes_length = this.activeBoxes.length;
+    }
 
     this.needsUpdate = true;
   }
