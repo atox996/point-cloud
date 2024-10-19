@@ -1,6 +1,4 @@
 import {
-  BufferGeometry,
-  CameraHelper,
   Color,
   LineSegments,
   Object3D,
@@ -11,8 +9,8 @@ import {
 import Viewer from "./Viewer";
 import type PointCloud from "../PointCloud";
 import { ActionName } from "../actions";
-import { getBoundingBoxInCameraView } from "../utils";
-import type { PositiveAxis } from "../typings";
+import { getBoundingBoxInCameraSpace } from "../utils";
+import type { Box3D, PositiveAxis } from "../typings";
 
 export const axisUpInfo = {
   x: {
@@ -57,15 +55,10 @@ const defaultConfig: ViewerConfig = {
 
 const defaultActions = [ActionName.OrbitControls];
 
-interface Box3D extends Object3D {
-  geometry: BufferGeometry;
-}
-
 export default class SideViewer extends Viewer {
   config: ViewerConfig;
 
   camera: OrthographicCamera;
-  cameraHelper: CameraHelper;
 
   activeBox?: Box3D;
 
@@ -83,10 +76,6 @@ export default class SideViewer extends Viewer {
 
     this.camera = new OrthographicCamera(-2, 2, 2, -2, 0, 10);
     if (this.config.up) this.camera.up.copy(this.config.up);
-
-    // DEBUG
-    this.cameraHelper = new CameraHelper(this.camera);
-    pointCloud.scene.add(this.cameraHelper);
 
     this.setActions(defaultActions);
 
@@ -165,7 +154,7 @@ export default class SideViewer extends Viewer {
 
   updateCameraProject() {
     if (!this.activeBox) return;
-    const bbox = getBoundingBoxInCameraView(this.activeBox, this.camera);
+    const bbox = getBoundingBoxInCameraSpace(this.activeBox, this.camera);
     const rectWidth = bbox.max.x - bbox.min.x;
     const rectHeight = bbox.max.y - bbox.min.y;
     const aspect = this.width / this.height;
@@ -186,14 +175,8 @@ export default class SideViewer extends Viewer {
     this.camera.right = cameraW / 2;
     this.camera.top = cameraH / 2;
     this.camera.bottom = -cameraH / 2;
-    // debugger
     this.camera.far = bbox.max.z - bbox.min.z;
     this.camera.updateProjectionMatrix();
-
-    // this.camera.position.add(this.cameraOffset);
-    // this.camera.updateMatrixWorld();
-    // this.camera.far = 0;
-    this.cameraHelper?.update();
   }
 
   render() {

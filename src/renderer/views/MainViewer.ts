@@ -1,14 +1,16 @@
 import {
-  LineSegments,
   Color,
+  LineSegments,
   Object3D,
   PerspectiveCamera,
+  Vector3,
   type Vector3Like,
 } from "three";
-import type PointCloud from "../PointCloud";
 import Viewer from "./Viewer";
+import type PointCloud from "../PointCloud";
 import { ActionName } from "../actions";
 import type { Box3D } from "../typings";
+import { getBoundingBoxInWorldSpace } from "../utils";
 
 interface ViewerConfig {
   up?: Vector3Like;
@@ -71,7 +73,15 @@ export default class MainViewer extends Viewer {
     else if (this.activeBox) activeBox = this.activeBox;
     if (!activeBox) return;
 
-    // TODO: 将相机移至激活对象中心
+    const bbox = getBoundingBoxInWorldSpace(activeBox);
+    const center = bbox.getCenter(new Vector3());
+    this.camera.position.add(center);
+    this.camera.lookAt(center);
+    const controllerAction = this.getAction(ActionName.OrbitControls);
+    if (controllerAction) {
+      controllerAction.controller.target.copy(center);
+      controllerAction.controller.update();
+    }
   }
 
   render() {
@@ -85,7 +95,7 @@ export default class MainViewer extends Viewer {
           bbox: box.geometry.boundingBox!,
           matrix: o.matrixWorld.clone().invert(),
           color: new Color(0xff0000),
-          opacity: 0.5,
+          opacity: 1,
         };
       },
     );
