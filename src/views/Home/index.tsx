@@ -1,10 +1,10 @@
 import classNames from "classnames";
 import styles from "./index.module.less";
-import { MainViewer, PointCloud, SideViewer } from "@/renderer";
+import { MainViewer, ShareScene, SideViewer } from "@/renderer";
 import BoxSvg from "@/assets/box.svg?react";
-import { ActionName } from "@/renderer/actions";
 import GUI from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { Color } from "three";
+import { Box3D } from "@/renderer/objects";
 
 const Home = () => {
   const initialized = useRef(false);
@@ -19,7 +19,7 @@ const Home = () => {
   const sideViewer = useRef<SideViewer>();
   const rearViewer = useRef<SideViewer>();
 
-  const pointCloud = new PointCloud();
+  const shareScene = new ShareScene();
 
   const [TOOLS] = useState([
     {
@@ -27,8 +27,8 @@ const Home = () => {
       icon: BoxSvg,
       onClick: () => {
         console.log("Create");
-        mainViewer.current?.getAction(ActionName.OrbitControls)?.toggle();
-        mainViewer.current?.getAction(ActionName.Create)?.toggle();
+        mainViewer.current?.getAction("OrbitControls")?.toggle();
+        mainViewer.current?.getAction("Create")?.toggle();
       },
     },
   ]);
@@ -38,40 +38,40 @@ const Home = () => {
     initialized.current = true;
 
     const up = { x: 0, y: 0, z: 1 };
-    mainViewer.current = new MainViewer(mainViewerRef.current!, pointCloud, {
+    mainViewer.current = new MainViewer(mainViewerRef.current!, shareScene, {
       up,
     });
-    mainViewer.current.disableAction(ActionName.Create);
+    mainViewer.current.disableAction("Create");
 
     overheadViewer.current = new SideViewer(
       overheadViewerRef.current!,
-      pointCloud,
+      shareScene,
       { up, axis: "z" },
     );
-    sideViewer.current = new SideViewer(sideViewerRef.current!, pointCloud, {
+    sideViewer.current = new SideViewer(sideViewerRef.current!, shareScene, {
       up,
       axis: "y",
     });
-    rearViewer.current = new SideViewer(rearViewerRef.current!, pointCloud, {
+    rearViewer.current = new SideViewer(rearViewerRef.current!, shareScene, {
       up,
       axis: "x",
     });
 
-    pointCloud
-      .load(
+    shareScene
+      .loadPointCloud(
         "https://basicai-prod-app-dataset.s3.us-west-2.amazonaws.com/team_1710563/dataset_1249533/data_44227652/binary_08a70e788ee5457f82f5d2fe95d34f5f.pcd",
       )
       .finally(() => {
-        console.log(pointCloud.points);
+        console.log(shareScene.points);
 
         const gui = new GUI();
         gui.domElement.style.left = "40px";
-        gui.add(pointCloud.points.material, "size", 1, 10);
-        gui.add(pointCloud.points.material, "opacity", 0, 1, 0.01);
+        gui.add(shareScene.points.material, "size", 1, 10);
+        gui.add(shareScene.points.material, "opacity", 0, 1, 0.01);
         const colorFolder = gui.addFolder("color");
         const preControllers: unknown[] = [];
         colorFolder
-          .add(pointCloud.points.material, "colorMode", {
+          .add(shareScene.points.material, "colorMode", {
             默认: 0,
             纯色: 1,
             渐变: 2,
@@ -81,20 +81,20 @@ const Home = () => {
             preControllers.forEach((item) => (item as GUI).destroy());
             preControllers.length = 0;
             if (value === 0) {
-              const { geometry } = pointCloud.points;
+              const { geometry } = shareScene.points;
               const positionAttr =
                 geometry.getAttribute("color") ||
                 geometry.getAttribute("position");
               geometry.setAttribute("color", positionAttr);
             } else if (value === 1) {
               const sColorController = colorFolder.addColor(
-                pointCloud.points.material,
+                shareScene.points.material,
                 "sColor",
               );
               preControllers.push(sColorController);
             } else if (value === 2) {
               // use_gradient
-              pointCloud.points.material.gradient = [
+              shareScene.points.material.gradient = [
                 { value: 0, color: new Color(0x99ccff) },
                 { value: 0.2, color: new Color(0x6699ff) },
                 { value: 0.4, color: new Color(0x3366ff) },
@@ -103,7 +103,7 @@ const Home = () => {
                 { value: 1, color: new Color(0x000099) },
               ];
 
-              pointCloud.points.material.gradient.forEach((item) => {
+              shareScene.points.material.gradient.forEach((item) => {
                 const colorController = colorFolder
                   .addColor(item, "color")
                   .name(`gradient_${item.value}`);
@@ -114,7 +114,7 @@ const Home = () => {
                 min: 0,
                 max: 5,
               };
-              pointCloud.points.material.gradientRange = [
+              shareScene.points.material.gradientRange = [
                 gradientRange.min,
                 gradientRange.max,
               ];
@@ -130,7 +130,7 @@ const Home = () => {
                     gradientRange_2.min(gradientRange.min);
                     gradientRange_2.setValue(gradientRange_2.getValue());
                   }
-                  pointCloud.points.material.gradientRange = [
+                  shareScene.points.material.gradientRange = [
                     gradientRange.min,
                     gradientRange.max,
                   ];
@@ -148,7 +148,7 @@ const Home = () => {
                     gradientRange_2.setValue(gradientRange_2.getValue());
                   }
 
-                  pointCloud.points.material.gradientRange = [
+                  shareScene.points.material.gradientRange = [
                     gradientRange.min,
                     gradientRange.max,
                   ];
@@ -176,9 +176,27 @@ const Home = () => {
         rearViewer.current?.render();
 
         // DEBUG
-        pointCloud.dispatchEvent({
-          type: "select",
-          selection: [pointCloud.trimBox],
+        const box3D_1 = new Box3D();
+        box3D_1.position.set(10, 20, 0);
+        box3D_1.scale.setScalar(10);
+        box3D_1.material.color.setHex(0xff0000);
+
+        const box3D_2 = new Box3D();
+        box3D_2.scale.setScalar(10);
+        box3D_2.material.color.setHex(0x00ff00);
+
+        shareScene.scene.add(box3D_1, box3D_2);
+        shareScene.select(box3D_1);
+
+        const boxFolder = gui.addFolder("box3D_1");
+        boxFolder.add(box3D_1.position, "x", -20, 20, 0.01).name("x");
+        boxFolder.add(box3D_1.position, "y", -20, 20, 0.01).name("y");
+        boxFolder.add(box3D_1.position, "z", -20, 20, 0.01).name("z");
+        boxFolder.onChange(() => {
+          mainViewer.current?.focalized();
+          overheadViewer.current?.focalized();
+          sideViewer.current?.focalized();
+          rearViewer.current?.focalized();
         });
       });
   }, []);

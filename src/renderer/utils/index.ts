@@ -1,5 +1,5 @@
 import { Box3, Vector3, type Camera } from "three";
-import type { Box3D } from "../typings";
+import type { Box3D } from "../objects";
 
 /**
  * 获取物体在世界空间的包围盒

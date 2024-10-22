@@ -2,10 +2,8 @@ import { SelectionBox, SelectionHelper } from "three/examples/jsm/Addons.js";
 import type Viewer from "../views/Viewer";
 import Action from "./Action";
 import { Vector3 } from "three";
-import { ActionName } from "./enum";
 
 export default class CreateAction extends Action {
-  static actionName = ActionName.Create;
   viewer: Viewer;
   selectionBox: SelectionBox;
   selectionHelper: SelectionHelper;
@@ -17,7 +15,7 @@ export default class CreateAction extends Action {
 
     this.selectionBox = new SelectionBox(
       viewer.camera,
-      viewer.pointCloud.scene,
+      viewer.shareScene.scene,
     );
     this.selectionHelper = new SelectionHelper(viewer.renderer, "selectBox");
     // 创建新的样式规则

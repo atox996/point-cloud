@@ -1,22 +1,15 @@
-import {
-  Color,
-  LineSegments,
-  Object3D,
-  PerspectiveCamera,
-  Vector3,
-  type Vector3Like,
-} from "three";
+import { PerspectiveCamera, Vector3, type Vector3Like } from "three";
 import Viewer from "./Viewer";
-import type PointCloud from "../PointCloud";
-import { ActionName } from "../actions";
-import type { Box3D } from "../typings";
+import type ShareScene from "../ShareScene";
 import { getBoundingBoxInWorldSpace } from "../utils";
+import type { ActionName } from "../actions";
+import { Box3D } from "../objects";
 
 interface ViewerConfig {
   up?: Vector3Like;
 }
 
-const defaultActions = [ActionName.Create, ActionName.OrbitControls];
+const defaultActions: ActionName[] = ["Create", "OrbitControls"];
 
 export default class MainViewer extends Viewer {
   config: ViewerConfig;
@@ -27,10 +20,10 @@ export default class MainViewer extends Viewer {
 
   constructor(
     container: HTMLElement,
-    pointCloud: PointCloud,
+    shareScene: ShareScene,
     config?: Partial<ViewerConfig>,
   ) {
-    super(container, pointCloud);
+    super(container, shareScene);
 
     this.config = {
       ...config,
@@ -50,10 +43,10 @@ export default class MainViewer extends Viewer {
   }
 
   initEvent() {
-    this.pointCloud.addEventListener("select", (ev) => {
-      const obj = ev.selection.findLast((o) => o instanceof Object3D);
+    this.shareScene.addEventListener("select", (ev) => {
+      const obj = ev.selection.findLast((o) => o instanceof Box3D);
       if (obj) {
-        this.focalized(obj as Box3D);
+        this.focalized(obj);
       } else {
         this.activeBox = undefined;
       }
@@ -75,9 +68,9 @@ export default class MainViewer extends Viewer {
 
     const bbox = getBoundingBoxInWorldSpace(activeBox);
     const center = bbox.getCenter(new Vector3());
-    this.camera.position.add(center);
+    this.camera.position.set(0, 0, 100).add(center);
     this.camera.lookAt(center);
-    const controllerAction = this.getAction(ActionName.OrbitControls);
+    const controllerAction = this.getAction("OrbitControls");
     if (controllerAction) {
       controllerAction.controller.target.copy(center);
       controllerAction.controller.update();
@@ -85,16 +78,15 @@ export default class MainViewer extends Viewer {
   }
 
   render() {
-    this.pointCloud.points.material.activeMode = 0;
-    this.pointCloud.points.material.cutPadding = 0;
-    this.pointCloud.points.material.activeBoxes = this.pointCloud.selection.map(
-      (o) => {
-        const box = o as LineSegments;
+    this.shareScene.points.material.activeMode = 0;
+    this.shareScene.points.material.cutPadding = 0;
+    this.shareScene.points.material.activeBoxes = this.shareScene.selection.map(
+      (box) => {
         if (!box.geometry.boundingBox) box.geometry.computeBoundingBox();
         return {
           bbox: box.geometry.boundingBox!,
-          matrix: o.matrixWorld.clone().invert(),
-          color: new Color(0xff0000),
+          matrix: box.matrixWorld.clone().invert(),
+          color: box.material.color,
           opacity: 1,
         };
       },

@@ -1,16 +1,9 @@
-import {
-  Color,
-  LineSegments,
-  Object3D,
-  OrthographicCamera,
-  Vector3,
-  type Vector3Like,
-} from "three";
+import { OrthographicCamera, Vector3, type Vector3Like } from "three";
 import Viewer from "./Viewer";
-import type PointCloud from "../PointCloud";
-import { ActionName } from "../actions";
+import type ShareScene from "../ShareScene";
 import { getBoundingBoxInCameraSpace } from "../utils";
-import type { Box3D, PositiveAxis } from "../typings";
+import type { ActionName } from "../actions";
+import { Box3D } from "../objects";
 
 export const axisUpInfo = {
   x: {
@@ -53,7 +46,7 @@ const defaultConfig: ViewerConfig = {
   paddingPercent: 1,
 };
 
-const defaultActions = [ActionName.OrbitControls];
+const defaultActions: ActionName[] = ["OrbitControls"];
 
 export default class SideViewer extends Viewer {
   config: ViewerConfig;
@@ -64,10 +57,10 @@ export default class SideViewer extends Viewer {
 
   constructor(
     container: HTMLElement,
-    pointCloud: PointCloud,
+    shareScene: ShareScene,
     config?: Partial<ViewerConfig>,
   ) {
-    super(container, pointCloud);
+    super(container, shareScene);
 
     this.config = {
       ...defaultConfig,
@@ -79,7 +72,7 @@ export default class SideViewer extends Viewer {
 
     this.setActions(defaultActions);
 
-    const controllerAction = this.getAction(ActionName.OrbitControls);
+    const controllerAction = this.getAction("OrbitControls");
     if (controllerAction) controllerAction.controller.enableRotate = false;
 
     this.resize();
@@ -90,10 +83,10 @@ export default class SideViewer extends Viewer {
   }
 
   initEvent() {
-    this.pointCloud.addEventListener("select", (ev) => {
-      const obj = ev.selection.findLast((o) => o instanceof Object3D);
+    this.shareScene.addEventListener("select", (ev) => {
+      const obj = ev.selection.findLast((o) => o instanceof Box3D);
       if (obj) {
-        this.focalized(obj as Box3D);
+        this.focalized(obj);
       } else {
         this.activeBox = undefined;
       }
@@ -143,7 +136,7 @@ export default class SideViewer extends Viewer {
     temp.set(0, 0, 0);
     temp.applyMatrix4(activeBox.matrixWorld);
     this.camera.lookAt(temp);
-    const controllerAction = this.getAction(ActionName.OrbitControls);
+    const controllerAction = this.getAction("OrbitControls");
     if (controllerAction) {
       controllerAction.controller.target.copy(temp);
       controllerAction.controller.update();
@@ -180,17 +173,17 @@ export default class SideViewer extends Viewer {
   }
 
   render() {
-    this.pointCloud.points.material.activeMode = 2;
-    this.pointCloud.points.material.cutPadding = 5;
+    this.shareScene.points.material.activeMode = 2;
+    this.shareScene.points.material.cutPadding = 5;
 
     if (this.activeBox) {
-      const box = this.activeBox as LineSegments;
-      if (!box.geometry.boundingBox) box.geometry.computeBoundingBox();
-      this.pointCloud.points.material.activeBoxes = [
+      if (!this.activeBox.geometry.boundingBox)
+        this.activeBox.geometry.computeBoundingBox();
+      this.shareScene.points.material.activeBoxes = [
         {
-          bbox: box.geometry.boundingBox!,
+          bbox: this.activeBox.geometry.boundingBox!,
           matrix: this.activeBox.matrixWorld.clone().invert(),
-          color: new Color(0x00ff00),
+          color: this.activeBox.material.color,
           opacity: 1,
         },
       ];

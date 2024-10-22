@@ -9,7 +9,6 @@ import type {
   IUniformValue,
   IUniformKeys,
 } from "./types";
-import { uniform } from "./utils";
 
 export default class PointsMaterial extends RawShaderMaterial {
   @uniform declare size: IUniformValue<"size">;
@@ -93,4 +92,17 @@ export default class PointsMaterial extends RawShaderMaterial {
 
     this.needsUpdate = true;
   }
+}
+
+function uniform(target: object, propertyKey: string | symbol) {
+  Object.defineProperty(target, propertyKey, {
+    get() {
+      return this.getUniform(propertyKey);
+    },
+    set(value) {
+      if (value !== this.getUniform(propertyKey)) {
+        this.setUniform(propertyKey, value);
+      }
+    },
+  });
 }

@@ -113,11 +113,13 @@ void main() {
         vOpacity = box.opacity;
         break;
       }
-      vec3 cutPaddingMin = min - vec3(cutPadding);
-      vec3 cutPaddingMax = max + vec3(cutPadding);
-      if (isInBox(boxPos.xyz, cutPaddingMin, cutPaddingMax)) {
-        insideBox = true;
-        break;
+      if (activeMode == 1 || activeMode == 2) {
+        vec3 cutPaddingMin = min - vec3(cutPadding);
+        vec3 cutPaddingMax = max + vec3(cutPadding);
+        if (isInBox(boxPos.xyz, cutPaddingMin, cutPaddingMax)) {
+          insideBox = true;
+          break;
+        }
       }
     }
     if (activeMode == 1 && insideBox || activeMode == 2 && !insideBox) {

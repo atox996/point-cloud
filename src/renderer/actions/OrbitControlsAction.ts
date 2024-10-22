@@ -1,10 +1,8 @@
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import type Viewer from "../views/Viewer";
 import Action from "./Action";
-import { ActionName } from "./enum";
 
 export default class OrbitControlsAction extends Action {
-  static actionName = ActionName.OrbitControls;
   viewer: Viewer;
   controller: OrbitControls;
 

@@ -1,11 +1,13 @@
 import { Camera, EventDispatcher, WebGLRenderer } from "three";
-import type PointCloud from "../PointCloud";
-import { ActionName, Actions, type ActionInstanceMap } from "../actions";
+import type ShareScene from "../ShareScene";
+import { Actions, type ActionInstanceMap, type ActionName } from "../actions";
 
 export default abstract class Viewer extends EventDispatcher {
+  abstract camera: Camera;
+
   container: HTMLElement;
   renderer: WebGLRenderer;
-  pointCloud: PointCloud;
+  shareScene: ShareScene;
   actions: ActionName[] = [];
   actionMap = new Map<ActionName, ActionInstanceMap[ActionName]>();
 
@@ -16,12 +18,9 @@ export default abstract class Viewer extends EventDispatcher {
     return this.container.clientHeight;
   }
 
-  abstract camera: Camera;
-
-  _listeners?: Record<string, Array<(e: Event) => void>>;
   resizeObserver: ResizeObserver;
 
-  constructor(container: HTMLElement, pointCloud: PointCloud) {
+  constructor(container: HTMLElement, shareScene: ShareScene) {
     super();
 
     this.container = container;
@@ -31,7 +30,7 @@ export default abstract class Viewer extends EventDispatcher {
     });
     this.container.appendChild(this.renderer.domElement);
 
-    this.pointCloud = pointCloud;
+    this.shareScene = shareScene;
 
     this.resizeObserver = new ResizeObserver(() => {
       this.resize();
@@ -88,13 +87,12 @@ export default abstract class Viewer extends EventDispatcher {
   }
 
   render() {
-    this.renderer.render(this.pointCloud.scene, this.camera);
+    this.renderer.render(this.shareScene.scene, this.camera);
   }
 
   dispose() {
     this.renderer.dispose();
     this.resizeObserver.disconnect();
-    this._listeners = {};
 
     this.actionMap.forEach((action) => {
       action.destroy();
