@@ -1,9 +1,9 @@
-import { OrthographicCamera, Vector3, type Vector3Like } from "three";
+import { CameraHelper, Vector3 } from "three";
 import Viewer from "./Viewer";
 import type ShareScene from "../ShareScene";
-import { getBoundingBoxInCameraSpace } from "../utils";
 import type { ActionName } from "../actions";
 import { Box3D } from "../objects";
+import { AxisCamera } from "../cameras";
 
 export const axisUpInfo = {
   x: {
@@ -35,7 +35,7 @@ export const axisUpInfo = {
 export type AxisType = keyof typeof axisUpInfo;
 
 interface ViewerConfig {
-  up?: Vector3Like;
+  up?: Vector3;
   axis: AxisType;
   // 聚焦时窗口边缘留出一定的空间
   paddingPercent: number;
@@ -51,9 +51,10 @@ const defaultActions: ActionName[] = ["OrbitControls"];
 export default class SideViewer extends Viewer {
   config: ViewerConfig;
 
-  camera: OrthographicCamera;
+  camera: AxisCamera;
 
   activeBox?: Box3D;
+  cameraHelper: CameraHelper;
 
   constructor(
     container: HTMLElement,
@@ -67,15 +68,18 @@ export default class SideViewer extends Viewer {
       ...config,
     };
 
-    this.camera = new OrthographicCamera(-2, 2, 2, -2, 0, 10);
+    this.camera = new AxisCamera(-2, 2, 2, -2, 0, 10);
     if (this.config.up) this.camera.up.copy(this.config.up);
+
+    this.cameraHelper = new CameraHelper(this.camera);
+    shareScene.scene.add(this.cameraHelper);
+
+    this.resize();
 
     this.setActions(defaultActions);
 
     const controllerAction = this.getAction("OrbitControls");
     if (controllerAction) controllerAction.controller.enableRotate = false;
-
-    this.resize();
 
     this.initEvent();
 
@@ -86,7 +90,7 @@ export default class SideViewer extends Viewer {
     this.shareScene.addEventListener("select", (ev) => {
       const obj = ev.selection.findLast((o) => o instanceof Box3D);
       if (obj) {
-        this.focalized(obj);
+        this.focusTarget(obj);
       } else {
         this.activeBox = undefined;
       }
@@ -94,85 +98,88 @@ export default class SideViewer extends Viewer {
     });
   }
 
-  resize() {
-    // TODO: 更新相机参数
-    // this.camera.updateProjectionMatrix();
-
-    super.resize();
-  }
-
   setAxis(axis: AxisType) {
     this.config.axis = axis;
-    this.focalized(this.activeBox);
+    this.camera.axis = axis;
+    this.focusTarget(this.activeBox);
     this.render();
   }
 
-  focalized(activeBox?: Box3D) {
+  focusTarget(activeBox?: Box3D) {
     if (activeBox) this.activeBox = activeBox;
     else if (this.activeBox) activeBox = this.activeBox;
     if (!activeBox) return;
 
-    activeBox.updateMatrixWorld();
-
-    const alignAxis = new Vector3();
-    const isInverse = this.config.axis.startsWith("-");
-    const axisValue = this.config.axis.slice(
-      isInverse ? 1 : 0,
-    ) as PositiveAxis<AxisType>;
-
-    alignAxis[axisValue] = isInverse ? -0.5 : 0.5;
-
-    const temp = new Vector3();
-    temp.copy(alignAxis);
-    temp.applyMatrix4(activeBox.matrixWorld);
-    this.camera.position.copy(temp);
-
-    temp
-      .copy(axisUpInfo[this.config.axis].yAxis.dir)
-      .applyMatrix4(activeBox.matrixWorld)
-      .sub(new Vector3().applyMatrix4(activeBox.matrixWorld));
-    this.camera.up.copy(temp);
-
-    temp.set(0, 0, 0);
-    temp.applyMatrix4(activeBox.matrixWorld);
-    this.camera.lookAt(temp);
+    this.camera.focusTarget(activeBox);
     const controllerAction = this.getAction("OrbitControls");
     if (controllerAction) {
-      controllerAction.controller.target.copy(temp);
+      controllerAction.controller.target.copy(this.camera.lookTarget);
       controllerAction.controller.update();
     }
 
-    this.updateCameraProject();
+    // activeBox.updateMatrixWorld();
+
+    // const alignAxis = new Vector3();
+    // const isInverse = this.config.axis.startsWith("-");
+    // const axisValue = this.config.axis.slice(
+    //   isInverse ? 1 : 0,
+    // ) as PositiveAxis<AxisType>;
+
+    // alignAxis[axisValue] = isInverse ? -0.5 : 0.5;
+
+    // const temp = new Vector3();
+    // temp.copy(alignAxis);
+    // temp.applyMatrix4(activeBox.matrixWorld);
+    // this.camera.position.copy(temp);
+
+    // temp
+    //   .copy(axisUpInfo[this.config.axis].yAxis.dir)
+    //   .applyMatrix4(activeBox.matrixWorld)
+    //   .sub(new Vector3().applyMatrix4(activeBox.matrixWorld));
+    // this.camera.up.copy(temp);
+
+    // temp.set(0, 0, 0);
+    // temp.applyMatrix4(activeBox.matrixWorld);
+    // this.camera.lookAt(temp);
+    // const controllerAction = this.getAction("OrbitControls");
+    // if (controllerAction) {
+    //   controllerAction.controller.target.copy(temp);
+    //   controllerAction.controller.update();
+    // }
+
+    // this.updateCameraProject();
   }
 
-  updateCameraProject() {
-    if (!this.activeBox) return;
-    const bbox = getBoundingBoxInCameraSpace(this.activeBox, this.camera);
-    const rectWidth = bbox.max.x - bbox.min.x;
-    const rectHeight = bbox.max.y - bbox.min.y;
-    const aspect = this.width / this.height;
+  // updateCameraProject() {
+  //   if (!this.activeBox) return;
+  //   const bbox = getBoundingBoxInCameraSpace(this.activeBox, this.camera);
+  //   const rectWidth = bbox.max.x - bbox.min.x;
+  //   const rectHeight = bbox.max.y - bbox.min.y;
+  //   const aspect = this.width / this.height;
 
-    const padding =
-      Math.min(rectWidth, rectHeight) * this.config.paddingPercent;
-    // let padding = (200 * rectWidth) / this.width;
-    const cameraW = Math.max(
-      rectWidth + padding,
-      (rectHeight + padding) * aspect,
-    );
-    const cameraH = Math.max(
-      rectHeight + padding,
-      (rectWidth + padding) / aspect,
-    );
+  //   const padding =
+  //     Math.min(rectWidth, rectHeight) * this.config.paddingPercent;
+  //   // let padding = (200 * rectWidth) / this.width;
+  //   const cameraW = Math.max(
+  //     rectWidth + padding,
+  //     (rectHeight + padding) * aspect,
+  //   );
+  //   const cameraH = Math.max(
+  //     rectHeight + padding,
+  //     (rectWidth + padding) / aspect,
+  //   );
 
-    this.camera.left = -cameraW / 2;
-    this.camera.right = cameraW / 2;
-    this.camera.top = cameraH / 2;
-    this.camera.bottom = -cameraH / 2;
-    this.camera.far = bbox.max.z - bbox.min.z;
-    this.camera.updateProjectionMatrix();
-  }
+  //   this.camera.left = -cameraW / 2;
+  //   this.camera.right = cameraW / 2;
+  //   this.camera.top = cameraH / 2;
+  //   this.camera.bottom = -cameraH / 2;
+  //   this.camera.far = bbox.max.z - bbox.min.z;
+  //   this.camera.updateProjectionMatrix();
+  // }
 
   render() {
+    this.cameraHelper.update();
+
     this.shareScene.points.material.activeMode = 2;
     this.shareScene.points.material.cutPadding = 5;
 

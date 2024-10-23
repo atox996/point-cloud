@@ -1,9 +1,10 @@
-import { Camera, EventDispatcher, WebGLRenderer } from "three";
+import { EventDispatcher, WebGLRenderer } from "three";
 import type ShareScene from "../ShareScene";
 import { Actions, type ActionInstanceMap, type ActionName } from "../actions";
+import type { CameraImplements } from "../cameras";
 
 export default abstract class Viewer extends EventDispatcher {
-  abstract camera: Camera;
+  abstract camera: CameraImplements;
 
   container: HTMLElement;
   renderer: WebGLRenderer;
@@ -39,6 +40,7 @@ export default abstract class Viewer extends EventDispatcher {
   }
 
   resize() {
+    this.camera.resize(this.width, this.height);
     this.renderer.setSize(this.width, this.height);
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.render();

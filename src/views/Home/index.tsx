@@ -3,7 +3,7 @@ import styles from "./index.module.less";
 import { MainViewer, ShareScene, SideViewer } from "@/renderer";
 import BoxSvg from "@/assets/box.svg?react";
 import GUI from "three/examples/jsm/libs/lil-gui.module.min.js";
-import { Color } from "three";
+import { Color, Vector3 } from "three";
 import { Box3D } from "@/renderer/objects";
 
 const Home = () => {
@@ -37,7 +37,7 @@ const Home = () => {
     if (initialized.current) return;
     initialized.current = true;
 
-    const up = { x: 0, y: 0, z: 1 };
+    const up = new Vector3(0, 0, 1);
     mainViewer.current = new MainViewer(mainViewerRef.current!, shareScene, {
       up,
     });
@@ -178,6 +178,7 @@ const Home = () => {
         // DEBUG
         const box3D_1 = new Box3D();
         box3D_1.position.set(10, 20, 0);
+        box3D_1.rotation.set(0, 0, Math.PI / 3);
         box3D_1.scale.setScalar(10);
         box3D_1.material.color.setHex(0xff0000);
 
@@ -193,10 +194,10 @@ const Home = () => {
         boxFolder.add(box3D_1.position, "y", -20, 20, 0.01).name("y");
         boxFolder.add(box3D_1.position, "z", -20, 20, 0.01).name("z");
         boxFolder.onChange(() => {
-          mainViewer.current?.focalized();
-          overheadViewer.current?.focalized();
-          sideViewer.current?.focalized();
-          rearViewer.current?.focalized();
+          mainViewer.current?.focusTarget();
+          overheadViewer.current?.focusTarget();
+          sideViewer.current?.focusTarget();
+          rearViewer.current?.focusTarget();
         });
       });
   }, []);
