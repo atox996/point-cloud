@@ -1,11 +1,11 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import AutoImport from "unplugin-auto-import/vite";
-import svgr from "vite-plugin-svgr";
-
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
+
+import react from "@vitejs/plugin-react";
+import AutoImport from "unplugin-auto-import/vite";
+import { defineConfig } from "vite";
+import svgr from "vite-plugin-svgr";
 
 // 获取当前分支 commitId
 let commitId = "";

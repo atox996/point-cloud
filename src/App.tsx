@@ -1,5 +1,6 @@
-import Home from "./views/Home";
 import "@/styles/index.less";
+
+import Home from "./views/Home";
 
 const App = () => {
   return (

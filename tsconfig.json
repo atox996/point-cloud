@@ -1,19 +1,29 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    /* ================= 核心配置 ================= */
+    "esModuleInterop": true,
     "module": "ESNext",
+    "moduleDetection": "force",
     "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
-    "strict": true,
     "skipLibCheck": true,
+    "target": "ESNext",
     "verbatimModuleSyntax": true,
-    "experimentalDecorators": true,
+    "jsx": "react-jsx",
+
+    /* ================= 类型检查 ================= */
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+
+    /* ================= 模块解析 ================= */
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
+
+    /* ================= 编译选项 ================= */
     "noEmit": true,
 
     "paths": {
       "@/*": ["./src/*"]
     }
-  },
-  "include": ["src", "*.d.ts"]
+  }
 }

@@ -1,16 +1,17 @@
-import { EventDispatcher, WebGLRenderer } from "three";
-import type ShareScene from "../ShareScene";
-import { Actions, type ActionInstanceMap, type ActionName } from "../actions";
-import type { CameraImplements } from "../cameras";
+import { Camera, EventDispatcher, MathUtils, WebGLRenderer } from "three";
 
-export default abstract class Viewer extends EventDispatcher {
-  abstract camera: CameraImplements;
+import type ShareScene from "../common/ShareScene";
 
+interface TEventMap {
+  renderBefore: EmptyObject;
+  renderAfter: EmptyObject;
+}
+
+export default abstract class Viewer extends EventDispatcher<TEventMap> {
+  enabled = true;
   container: HTMLElement;
-  renderer: WebGLRenderer;
   shareScene: ShareScene;
-  actions: ActionName[] = [];
-  actionMap = new Map<ActionName, ActionInstanceMap[ActionName]>();
+  renderer: WebGLRenderer;
 
   get width() {
     return this.container.clientWidth;
@@ -19,86 +20,61 @@ export default abstract class Viewer extends EventDispatcher {
     return this.container.clientHeight;
   }
 
-  resizeObserver: ResizeObserver;
+  abstract camera: Camera;
 
-  constructor(container: HTMLElement, shareScene: ShareScene) {
+  readonly id: string;
+  readonly name: string;
+
+  private _resizeObserver: ResizeObserver;
+  private _renderTimer = 0;
+
+  constructor(container: HTMLElement, shareScene: ShareScene, name = "") {
     super();
+    this.id = MathUtils.generateUUID();
+    this.name = name;
 
     this.container = container;
+    this.shareScene = shareScene;
+    shareScene.addView(this);
+
     this.renderer = new WebGLRenderer({ antialias: true });
-    this.renderer.domElement.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-    });
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(this.width, this.height);
     this.container.appendChild(this.renderer.domElement);
 
-    this.shareScene = shareScene;
-
-    this.resizeObserver = new ResizeObserver(() => {
+    this._resizeObserver = new ResizeObserver(() => {
       this.resize();
     });
-    this.resizeObserver.observe(this.container);
+    this._resizeObserver.observe(this.container);
   }
 
   resize() {
-    this.camera.resize(this.width, this.height);
     this.renderer.setSize(this.width, this.height);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
     this.render();
   }
 
-  getAction<T extends ActionName>(name: T) {
-    return this.actionMap.get(name) as ActionInstanceMap[T] | undefined;
-  }
-
-  setActions(actionNames: ActionName[]) {
-    this.actions = actionNames;
-    actionNames.forEach((name) => {
-      const ActionCtr = Actions.get(name);
-      if (!ActionCtr) return;
-      const action = new ActionCtr(this);
-      action.init();
-      this.actionMap.set(name, action);
-    });
-  }
-
-  disableAction(actionName?: ActionName | ActionName[]) {
-    let names: ActionName[] = [];
-    if (!actionName) {
-      names = this.actions;
-    } else {
-      names = Array.isArray(actionName) ? actionName : [actionName];
-      names.forEach((name) => {
-        const action = this.actionMap.get(name);
-        if (action) action.toggle(false);
-      });
-    }
-  }
-
-  enableAction(actionName?: ActionName | ActionName[]) {
-    let names: ActionName[] = [];
-    if (!actionName) {
-      names = this.actions;
-    } else {
-      names = Array.isArray(actionName) ? actionName : [actionName];
-    }
-
-    names.forEach((name) => {
-      const action = this.actionMap.get(name);
-      if (action) action.toggle(true);
-    });
+  toggle(enabled?: boolean) {
+    this.enabled = enabled === undefined ? !this.enabled : enabled;
+    if (this.enabled) this.render();
   }
 
   render() {
-    this.renderer.render(this.shareScene.scene, this.camera);
+    if (!this.enabled || this._renderTimer) return;
+    this._renderTimer = requestAnimationFrame(() => {
+      this.dispatchEvent({ type: "renderBefore" });
+      this.renderFrame();
+      this.dispatchEvent({ type: "renderAfter" });
+      this._renderTimer = 0;
+    });
   }
 
   dispose() {
+    this.enabled = false;
+    this.shareScene.removeView(this);
     this.renderer.dispose();
-    this.resizeObserver.disconnect();
-
-    this.actionMap.forEach((action) => {
-      action.destroy();
-    });
-    this.actionMap.clear();
+    this.renderer.domElement.remove();
+    this._resizeObserver.disconnect();
   }
+
+  abstract renderFrame(): void;
 }

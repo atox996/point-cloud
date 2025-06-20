@@ -1,3 +1,4 @@
-export { default as ShareScene } from "./ShareScene";
-export { default as SideViewer } from "./views/SideViewer";
-export { default as MainViewer } from "./views/MainViewer";
+export { default as ShareScene } from "./common/ShareScene";
+export { default as ImageViewer } from "./views/ImageViewer";
+export { default as OrthographicViewer } from "./views/OrthographicViewer";
+export { default as PerspectiveViewer } from "./views/PerspectiveViewer";

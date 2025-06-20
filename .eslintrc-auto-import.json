@@ -1,11 +1,15 @@
 {
   "globals": {
+    "BrowserRouter": true,
+    "HashRouter": true,
     "Link": true,
     "NavLink": true,
     "Navigate": true,
     "Outlet": true,
     "Route": true,
     "Routes": true,
+    "StrictMode": true,
+    "Suspense": true,
     "createRef": true,
     "forwardRef": true,
     "lazy": true,
@@ -37,10 +41,6 @@
     "useSearchParams": true,
     "useState": true,
     "useSyncExternalStore": true,
-    "useTransition": true,
-    "BrowserRouter": true,
-    "HashRouter": true,
-    "StrictMode": true,
-    "Suspense": true
+    "useTransition": true
   }
 }
