@@ -21,9 +21,11 @@
 
     /* ================= 编译选项 ================= */
     "noEmit": true,
+    "experimentalDecorators": true,
 
     "paths": {
       "@/*": ["./src/*"]
     }
-  }
+  },
+  "exclude": ["node_modules", "dist"]
 }

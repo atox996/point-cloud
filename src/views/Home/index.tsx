@@ -1,7 +1,7 @@
 import classNames from "classnames";
 
 import BoxSvg from "@/assets/box.svg?react";
-import { PerspectiveViewer, ShareScene } from "@/renderer";
+import { OrthographicViewer, PerspectiveViewer, ShareScene } from "@/renderer";
 
 import styles from "./index.module.less";
 
@@ -14,6 +14,9 @@ const Home = () => {
   const shareScene = useMemo(() => new ShareScene(), []);
 
   const mainViewer = useRef<PerspectiveViewer>(null);
+  const overhead = useRef<OrthographicViewer>(null);
+  const side = useRef<OrthographicViewer>(null);
+  const rear = useRef<OrthographicViewer>(null);
 
   const [TOOLS] = useState([
     {
@@ -30,8 +33,20 @@ const Home = () => {
     mainViewer.current = new PerspectiveViewer(mainViewerRef.current!, shareScene, {
       name: "main",
     });
+    overhead.current = new OrthographicViewer(overheadViewerRef.current!, shareScene, {
+      name: "overhead",
+    });
+    side.current = new OrthographicViewer(sideViewerRef.current!, shareScene, {
+      name: "side",
+    });
+    rear.current = new OrthographicViewer(rearViewerRef.current!, shareScene, {
+      name: "rear",
+    });
     return () => {
       mainViewer.current?.dispose();
+      overhead.current?.dispose();
+      side.current?.dispose();
+      rear.current?.dispose();
     };
   }, []);
 

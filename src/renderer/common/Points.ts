@@ -7,7 +7,7 @@ import {
 } from "three";
 import { PCDLoader } from "three/examples/jsm/Addons.js";
 
-import type PointsMaterial from "./material/PointsMaterial";
+import type PointsMaterial from "./PointsMaterial";
 
 interface TEventMap extends Object3DEventMap {
   pointsChange: EmptyObject;
@@ -62,6 +62,8 @@ export default class Points extends BasicPoints<BufferGeometry, PointsMaterial, 
       intensity,
       label,
     });
+    console.log(this);
+
     return this;
   }
 }

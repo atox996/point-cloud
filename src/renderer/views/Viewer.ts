@@ -1,4 +1,4 @@
-import { Camera, EventDispatcher, MathUtils, WebGLRenderer } from "three";
+import { Camera, Controls, EventDispatcher, MathUtils, WebGLRenderer } from "three";
 
 import type ShareScene from "../common/ShareScene";
 
@@ -21,6 +21,7 @@ export default abstract class Viewer extends EventDispatcher<TEventMap> {
   }
 
   abstract camera: Camera;
+  abstract controls: Controls<EmptyObject>;
 
   readonly id: string;
   readonly name: string;

@@ -1,8 +1,8 @@
 import { AxesHelper, EventDispatcher, Group, Scene } from "three";
 
 import type Viewer from "../views/Viewer";
-import PointsMaterial from "./material/PointsMaterial";
 import Points, { type PointsData } from "./Points";
+import PointsMaterial from "./PointsMaterial";
 
 interface TEventMap {
   pointsChange: EmptyObject;
