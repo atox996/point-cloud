@@ -27,6 +27,11 @@ export default class ImageViewer extends Viewer {
     this.camera.updateProjectionMatrix();
     super.resize();
   }
+  focus(object = this.focusObject): void {
+    this.focusObject = object;
+    if (!object) return;
+    // TODO: 聚焦相机到元素
+  }
   renderFrame(): void {
     // TODO: 定制化渲染
     this.renderer.render(this.shareScene.scene, this.camera);

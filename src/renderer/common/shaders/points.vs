@@ -11,13 +11,12 @@ attribute vec3 position;
 #endif
 
 uniform float size;
-uniform float intensity;
-uniform float opacity;
+uniform float brightness;
 
-varying vec4 vFragColor;
+varying vec3 vColor;
 
 void main() {
-  vFragColor = vec4(color * intensity, opacity);
+  vColor = vec3(color * brightness);
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   gl_PointSize = size;

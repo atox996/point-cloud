@@ -34,14 +34,24 @@ const Home = () => {
       name: "main",
     });
     overhead.current = new OrthographicViewer(overheadViewerRef.current!, shareScene, {
+      axis: "z",
       name: "overhead",
     });
     side.current = new OrthographicViewer(sideViewerRef.current!, shareScene, {
+      axis: "y",
       name: "side",
     });
     rear.current = new OrthographicViewer(rearViewerRef.current!, shareScene, {
+      axis: "-x",
       name: "rear",
     });
+    shareScene.addEventListener("pointsChange", () => {
+      shareScene.views.forEach((view) => {
+        view.focus(shareScene.pointsGroup);
+      });
+    });
+    console.log(shareScene);
+
     return () => {
       mainViewer.current?.dispose();
       overhead.current?.dispose();

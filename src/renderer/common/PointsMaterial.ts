@@ -63,8 +63,8 @@ export default class PointsMaterial extends RawShaderMaterial {
     this.uniforms = {
       /** 点大小 */
       size: makeUniform("c", 1.0),
-      /** 颜色强度 */
-      intensity: makeUniform("c", 1.0),
+      /** 亮度 */
+      brightness: makeUniform("c", 1.0),
       /** 透明度 */
       opacity: makeUniform("c", 1.0),
       /** 颜色 */

@@ -1,6 +1,8 @@
 export {};
 
 declare global {
+  type Axis = "x" | "y" | "z" | "-x" | "-y" | "-z";
+
   type PositiveAxis<T> = T extends `-${infer _}` ? _ : T;
 
   type EmptyObject = {};

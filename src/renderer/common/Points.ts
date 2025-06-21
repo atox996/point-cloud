@@ -62,8 +62,6 @@ export default class Points extends BasicPoints<BufferGeometry, PointsMaterial, 
       intensity,
       label,
     });
-    console.log(this);
-
     return this;
   }
 }
