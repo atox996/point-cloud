@@ -30,7 +30,7 @@ export default class OrthographicViewer extends Viewer {
 
     this.camera = new OrthographicCamera();
     this.cameraHelper = new CameraHelper(this.camera);
-    // this.cameraHelper.visible = false;
+    this.cameraHelper.visible = false;
     shareScene.scene.add(this.camera, this.cameraHelper);
 
     this.axis = config.axis;
