@@ -17,7 +17,7 @@ export default class PerspectiveViewer extends Viewer {
 
     this.camera = new PerspectiveCamera(45, this.width / this.height, 1, 30000);
     this.camera.position.set(-0.01, 0, 100);
-    shareScene.scene.add(this.camera);
+
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.addEventListener("change", () => this.render());
   }

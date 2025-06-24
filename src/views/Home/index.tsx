@@ -30,7 +30,9 @@ const Home = () => {
   ]);
 
   useEffect(() => {
-    shareScene.loadPointCloud("/test.pcd");
+    shareScene.loadPointCloud(
+      "https://basicai-prod-app-dataset.s3.us-west-2.amazonaws.com/team_1711395/dataset_1255224/data_45200230/binary_c97769fad9ea418b96942a42799b008f.pcd",
+    );
     mainViewer.current = new PerspectiveViewer(mainViewerRef.current!, shareScene, {
       name: "main",
     });
@@ -46,11 +48,8 @@ const Home = () => {
       axis: "-x",
       name: "rear",
     });
-    shareScene.addEventListener("pointsChange", () => {
-      shareScene.views.forEach((view) => {
-        view.focus(shareScene.originHelper);
-      });
-      shareScene.render();
+    shareScene.views.forEach((view) => {
+      view.focus(shareScene.originHelper);
     });
     console.log(shareScene);
 
