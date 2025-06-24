@@ -1,15 +1,10 @@
 import classNames from "classnames";
 
-import rawData from "@/../public/camera.json";
 import BoxSvg from "@/assets/box.svg?react";
 import { OrthographicViewer, PerspectiveViewer } from "@/renderer";
-import { normalizeCameraParameters } from "@/renderer/utils";
 import { useShareContext } from "@/stores/ShareContext";
 
-import ImageViewer from "./components/ImageViewer";
 import styles from "./index.module.less";
-
-const { intrinsics, extrinsics } = normalizeCameraParameters(rawData);
 
 const Home = () => {
   const { shareScene } = useShareContext();
@@ -23,14 +18,6 @@ const Home = () => {
   const overhead = useRef<OrthographicViewer>(null);
   const side = useRef<OrthographicViewer>(null);
   const rear = useRef<OrthographicViewer>(null);
-
-  const [cameras] = useState([
-    {
-      img: "/center_camera_fov120.jpg",
-      extrinsics,
-      intrinsics,
-    },
-  ]);
 
   const [TOOLS] = useState([
     {
@@ -61,8 +48,9 @@ const Home = () => {
     });
     shareScene.addEventListener("pointsChange", () => {
       shareScene.views.forEach((view) => {
-        view.focus(shareScene.pointsGroup);
+        view.focus(shareScene.originHelper);
       });
+      shareScene.render();
     });
     console.log(shareScene);
 
@@ -84,13 +72,7 @@ const Home = () => {
           </div>
         ))}
       </div>
-      <div className={classNames(styles["main-viewer"])} ref={mainViewerRef}>
-        <div className={classNames(styles["images-viewer"])}>
-          {cameras.map((camera) => (
-            <ImageViewer {...camera} key={camera.img} />
-          ))}
-        </div>
-      </div>
+      <div className={classNames(styles["main-viewer"])} ref={mainViewerRef}></div>
       <div className={classNames(styles["side-viewer"])}>
         <div ref={overheadViewerRef}></div>
         <div ref={sideViewerRef}></div>

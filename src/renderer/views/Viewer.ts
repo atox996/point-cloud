@@ -1,4 +1,4 @@
-import { Camera, CameraHelper, Controls, EventDispatcher, MathUtils, Object3D, WebGLRenderer } from "three";
+import { Camera, CameraHelper, Controls, EventDispatcher, MathUtils, WebGLRenderer } from "three";
 
 import type ShareScene from "../common/ShareScene";
 
@@ -12,7 +12,7 @@ export default abstract class Viewer extends EventDispatcher<TEventMap> {
   container: HTMLElement;
   shareScene: ShareScene;
   renderer: WebGLRenderer;
-  focusObject?: Object3D;
+  focusObject?: Box3DLike;
 
   get width() {
     return this.container.clientWidth;
@@ -50,6 +50,8 @@ export default abstract class Viewer extends EventDispatcher<TEventMap> {
       this.resize();
     });
     this._resizeObserver.observe(this.container);
+
+    this.initEvent();
   }
 
   resize() {
@@ -82,7 +84,9 @@ export default abstract class Viewer extends EventDispatcher<TEventMap> {
     this._resizeObserver.disconnect();
   }
 
-  abstract focus(object?: Object3D): void;
+  abstract initEvent(): void;
+
+  abstract focus(object?: Box3DLike): void;
 
   abstract renderFrame(): void;
 }

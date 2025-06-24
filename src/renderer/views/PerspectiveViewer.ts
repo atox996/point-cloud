@@ -21,6 +21,9 @@ export default class PerspectiveViewer extends Viewer {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.addEventListener("change", () => this.render());
   }
+  initEvent(): void {
+    console.log("initEvent");
+  }
   resize(): void {
     this.camera.aspect = this.width / this.height;
     this.camera.updateProjectionMatrix();

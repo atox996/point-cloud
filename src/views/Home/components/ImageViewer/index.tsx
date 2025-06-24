@@ -7,8 +7,6 @@ import styles from "./index.module.less";
 
 interface IProps {
   img: string;
-  extrinsics: number[];
-  intrinsics: { fx: number; fy: number; cx: number; cy: number };
 }
 
 export default (props: IProps) => {

@@ -1,12 +1,14 @@
-import { Box3, Camera, CameraHelper, Matrix4, OrthographicCamera, Quaternion, Vector3 } from "three";
+import { Box3, CameraHelper, OrthographicCamera, Vector3 } from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 
+import Box3D from "../common/objects/Box3D";
 import type ShareScene from "../common/ShareScene";
 import Viewer from "./Viewer";
 
 interface ViewerConfig {
   axis: Axis;
   name?: string;
+  paddingPercent?: number;
 }
 
 const AXIS_UP_MAPPING: Record<Axis, Vector3> = {
@@ -25,6 +27,9 @@ export default class OrthographicViewer extends Viewer {
   cameraHelper: CameraHelper;
   controls: OrbitControls;
 
+  paddingPercent: number;
+  projectRect: Box3;
+
   constructor(container: HTMLElement, shareScene: ShareScene, config: ViewerConfig) {
     super(container, shareScene, config.name);
 
@@ -34,14 +39,28 @@ export default class OrthographicViewer extends Viewer {
     shareScene.scene.add(this.camera, this.cameraHelper);
 
     this.axis = config.axis;
+    this.paddingPercent = config.paddingPercent ?? 1;
     this.viewDirection = new Vector3();
+    this.projectRect = new Box3();
     this.setAxis(this.axis);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableRotate = false;
     this.controls.addEventListener("change", () => this.shareScene.render());
   }
+  initEvent(): void {
+    this.shareScene.addEventListener("select", ({ selection, target }) => {
+      const object = selection.findLast((o) => o instanceof Box3D);
+      console.log(target);
 
+      if (object) {
+        this.focus(object);
+      } else {
+        this.focusObject = undefined;
+      }
+      this.render();
+    });
+  }
   setAxis(axis: Axis) {
     this.axis = axis;
 
@@ -56,47 +75,92 @@ export default class OrthographicViewer extends Viewer {
     this.viewDirection[letter as PositiveAxis<Axis>] = sign === "-" ? -1 : 1;
 
     if (this.focusObject) this.focus();
-    else this.render();
+    this.render();
   }
 
   focus(object = this.focusObject) {
     this.focusObject = object;
     if (!object) return;
-    // 1. 获取包围盒中心和大小
-    const box = new Box3().setFromObject(object);
-    const center = box.getCenter(new Vector3());
-    const size = box.getSize(new Vector3());
 
-    // 2. 将视角方向从局部转换为世界空间方向
-    const worldDir = this.viewDirection
-      .clone()
-      .applyQuaternion(object.getWorldQuaternion(new Quaternion()))
-      .normalize();
+    object.updateMatrixWorld();
 
-    // 3. 设置相机的位置 = 中心点沿观察方向推远
-    const distance = size.length(); // 或者用 size.z * 1.5 保守距离
-    const position = center.clone().addScaledVector(worldDir, distance);
+    const temp = new Vector3();
+    temp.copy(this.viewDirection);
+    temp.applyMatrix4(object.matrixWorld);
+    this.camera.position.copy(temp);
 
-    this.camera.position.copy(position);
-    this.camera.lookAt(center);
-    this.camera.updateMatrixWorld();
-    this.controls.target.copy(center);
+    temp
+      .copy(AXIS_UP_MAPPING[this.axis])
+      .applyMatrix4(object.matrixWorld)
+      .sub(new Vector3().applyMatrix4(object.matrixWorld));
+    this.camera.up.copy(temp);
 
-    const projectedSize = computeProjectedSize(this.camera, box);
+    temp.set(0, 0, 0);
+    temp.applyMatrix4(object.matrixWorld);
+    this.camera.lookAt(temp);
 
+    this.updateProjectRect();
+    this.updateCameraProject();
+  }
+
+  updateProjectRect() {
+    if (!this.focusObject) return;
+
+    const { focusObject, camera } = this;
+
+    camera.updateMatrixWorld();
+    focusObject.updateMatrixWorld();
+
+    if (!focusObject.geometry.boundingBox) focusObject.geometry.computeBoundingBox();
+    const bbox = focusObject.geometry.boundingBox!;
+
+    const minProject = new Vector3().copy(bbox.min);
+    const maxProject = new Vector3().copy(bbox.max);
+
+    minProject.applyMatrix4(focusObject.matrixWorld).applyMatrix4(camera.matrixWorldInverse);
+    maxProject.applyMatrix4(focusObject.matrixWorld).applyMatrix4(camera.matrixWorldInverse);
+
+    const min = new Vector3();
+    const max = new Vector3();
+
+    const xMin = Math.min(minProject.x, maxProject.x);
+    const xMax = Math.max(minProject.x, maxProject.x);
+    const yMin = Math.min(minProject.y, maxProject.y);
+    const yMax = Math.max(minProject.y, maxProject.y);
+    const zMin = Math.min(minProject.z, maxProject.z);
+    const zMax = Math.max(minProject.z, maxProject.z);
+
+    min.set(xMin, yMin, zMin);
+    max.set(xMax, yMax, zMax);
+
+    this.projectRect.min.copy(min);
+    this.projectRect.max.copy(max);
+  }
+
+  updateCameraProject() {
+    const { projectRect } = this;
+    const rectWidth = projectRect.max.x - projectRect.min.x;
+    const rectHeight = projectRect.max.y - projectRect.min.y;
     const aspect = this.width / this.height;
-    const padding = 1.2;
-    const halfW = (projectedSize.width * padding) / 2;
-    const halfH = (projectedSize.height * padding) / 2;
-    this.camera.left = -halfW * aspect;
-    this.camera.right = halfW * aspect;
-    this.camera.top = halfH * aspect;
-    this.camera.bottom = -halfH * aspect;
-    this.camera.near = 0;
-    this.camera.far = distance * 2;
+
+    // debugger
+    const padding = Math.min(rectWidth, rectHeight) * this.paddingPercent;
+    // let padding = (200 * rectWidth) / this.width;
+    const cameraW = Math.max(rectWidth + padding, (rectHeight + padding) * aspect);
+    const cameraH = Math.max(rectHeight + padding, (rectWidth + padding) / aspect);
+
+    this.camera.left = (-cameraW / 2) * this.camera.zoom;
+    this.camera.right = (cameraW / 2) * this.camera.zoom;
+    this.camera.top = (cameraH / 2) * this.camera.zoom;
+    this.camera.bottom = (-cameraH / 2) * this.camera.zoom;
+    // debugger
+    this.camera.far = projectRect.max.z - projectRect.min.z;
     this.camera.updateProjectionMatrix();
 
-    this.render();
+    // this.camera.position.add(this.cameraOffset);
+    // this.camera.updateMatrixWorld();
+    // this.camera.far = 0;
+    this.cameraHelper?.update();
   }
 
   renderFrame(): void {
@@ -104,34 +168,4 @@ export default class OrthographicViewer extends Viewer {
     // TODO: 定制化渲染
     this.renderer.render(this.shareScene.scene, this.camera);
   }
-}
-
-function computeProjectedSize(camera: Camera, box: Box3): { width: number; height: number } {
-  const points = [
-    new Vector3(box.min.x, box.min.y, box.min.z),
-    new Vector3(box.min.x, box.min.y, box.max.z),
-    new Vector3(box.min.x, box.max.y, box.min.z),
-    new Vector3(box.min.x, box.max.y, box.max.z),
-    new Vector3(box.max.x, box.min.y, box.min.z),
-    new Vector3(box.max.x, box.min.y, box.max.z),
-    new Vector3(box.max.x, box.max.y, box.min.z),
-    new Vector3(box.max.x, box.max.y, box.max.z),
-  ];
-
-  const inv = new Matrix4().copy(camera.matrixWorld).invert();
-
-  let minX = Infinity,
-    maxX = -Infinity;
-  let minY = Infinity,
-    maxY = -Infinity;
-
-  for (const p of points) {
-    const projected = p.clone().applyMatrix4(inv);
-    minX = Math.min(minX, projected.x);
-    maxX = Math.max(maxX, projected.x);
-    minY = Math.min(minY, projected.y);
-    maxY = Math.max(maxY, projected.y);
-  }
-
-  return { width: maxX - minX, height: maxY - minY };
 }
