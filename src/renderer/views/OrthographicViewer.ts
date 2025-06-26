@@ -1,6 +1,6 @@
-import { Box3, CameraHelper, OrthographicCamera, Vector3 } from "three";
-import { OrbitControls } from "three/examples/jsm/Addons.js";
+import { Box3, Color, OrthographicCamera, Vector3 } from "three";
 
+import type { ActionName } from "../actions";
 import Box3D from "../common/objects/Box3D";
 import type ShareScene from "../common/ShareScene";
 import Viewer from "./Viewer";
@@ -8,6 +8,7 @@ import Viewer from "./Viewer";
 interface ViewerConfig {
   axis: Axis;
   name?: string;
+  actions?: ActionName[];
   paddingPercent?: number;
 }
 
@@ -20,13 +21,12 @@ const AXIS_UP_MAPPING: Record<Axis, Vector3> = {
   "-z": new Vector3(1, 0, 0),
 };
 
+const DEFAULT_ACTIONS: ActionName[] = ["Select", "OrbitControls"];
+
 export default class OrthographicViewer extends Viewer {
   axis: Axis;
   viewDirection: Vector3;
   camera: OrthographicCamera;
-  cameraHelper: CameraHelper;
-  controls: OrbitControls;
-
   paddingPercent: number;
   projectRect: Box3;
 
@@ -34,33 +34,28 @@ export default class OrthographicViewer extends Viewer {
     super(container, shareScene, config.name);
 
     this.camera = new OrthographicCamera();
-    this.cameraHelper = new CameraHelper(this.camera);
-    this.cameraHelper.visible = false;
-    shareScene.scene.add(this.cameraHelper);
-
     this.axis = config.axis;
     this.paddingPercent = config.paddingPercent ?? 1;
     this.viewDirection = new Vector3();
     this.projectRect = new Box3();
-    this.setAxis(this.axis);
 
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableRotate = false;
-    this.controls.addEventListener("change", () => this.render());
+    this.setAxis(this.axis);
+    this.setActions(...(config.actions || DEFAULT_ACTIONS));
   }
+
   initEvent(): void {
-    this.shareScene.addEventListener("select", ({ selection, target }) => {
-      const object = selection.findLast((o) => o instanceof Box3D);
-      console.log(target);
+    this.shareScene.addEventListener("select", ({ selection }) => {
+      const object = selection.find((o) => o instanceof Box3D);
 
       if (object) {
-        this.focus(object);
+        if (this.autoFocus) this.focus(object);
       } else {
         this.focusObject = undefined;
       }
       this.render();
     });
   }
+
   setAxis(axis: Axis) {
     this.axis = axis;
 
@@ -153,20 +148,28 @@ export default class OrthographicViewer extends Viewer {
     this.camera.right = (cameraW / 2) * this.camera.zoom;
     this.camera.top = (cameraH / 2) * this.camera.zoom;
     this.camera.bottom = (-cameraH / 2) * this.camera.zoom;
-    // debugger
     this.camera.far = projectRect.max.z - projectRect.min.z;
     this.camera.updateProjectionMatrix();
-
-    // this.camera.position.add(this.cameraOffset);
-    // this.camera.updateMatrixWorld();
-    // this.camera.far = 0;
-    this.cameraHelper?.update();
   }
 
   renderFrame(): void {
-    this.cameraHelper.update();
-    // TODO: 定制化渲染
-    const { scene } = this.shareScene;
-    this.renderer.render(scene, this.camera);
+    const { pointsGroup, material } = this.shareScene;
+    if (this.focusObject) {
+      const oldDepthTest = material.depthTest;
+      const oldGradientTexture = material.uniforms.gradientTexture.value;
+      const oldColor = material.uniforms.color.value;
+
+      material.depthTest = false;
+      material.uniforms.gradientTexture.value = null;
+      material.uniforms.color.value = new Color(0xffffff);
+      this.renderer.render(pointsGroup, this.camera);
+      material.depthTest = oldDepthTest;
+      material.uniforms.gradientTexture.value = oldGradientTexture;
+      material.uniforms.color.value = oldColor;
+      this.renderer.render(this.focusObject, this.camera);
+    } else {
+      this.renderer.render(pointsGroup, this.camera);
+    }
+    this.updateProjectRect();
   }
 }

@@ -123,11 +123,12 @@ const _matrix = new Matrix4();
 const _ray = new Ray();
 const _pos = new Vector3();
 
-export default class Box3D extends LineSegments implements Box3DLike {
+export default class Box3D extends LineSegments<BufferGeometry, LineBasicMaterial> {
   color: Color;
   constructor() {
-    super(defaultGeometry, defaultMaterial);
+    super(defaultGeometry, defaultMaterial.clone());
     this.color = new Color();
+    this.material.color = this.color;
   }
 
   raycast(raycaster: Raycaster, intersects: Intersection<Box3D>[]) {

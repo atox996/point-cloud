@@ -2,7 +2,6 @@ precision highp float;
 
 uniform mat4 projectionMatrix;
 uniform mat4 modelViewMatrix;
-uniform mat4 modelMatrix;
 uniform float size;
 uniform float brightness;
 
@@ -17,6 +16,19 @@ attribute vec3 position;
   attribute vec3 color;
 #endif
 
+#ifdef USE_HIGHLIGHT_BOX
+  struct FilterBox {
+    vec3 min;
+    vec3 max;
+    vec3 color;
+    mat4 inverseMatrix;
+  };
+  uniform FilterBox highlightBox;
+  bool isInBox(vec3 pos, vec3 min, vec3 max){
+    return pos.x >= min.x && pos.x <= max.x && pos.y >= min.y && pos.y <= max.y && pos.z >= min.z && pos.z <= max.z;
+  }
+#endif
+
 varying vec3 vColor;
 
 void main() {
@@ -26,6 +38,13 @@ void main() {
     vColor = texture2D(gradientTexture, vec2(t, 0.5)).rgb;
   #else
     vColor = color;
+  #endif
+
+  #ifdef USE_HIGHLIGHT_BOX
+    vec4 boxPos = highlightBox.inverseMatrix *  vec4( position, 1.0 );
+    if(isInBox(boxPos.xyz,highlightBox.min,highlightBox.max)){
+      vColor = highlightBox.color;
+    }
   #endif
 
   vColor *= brightness;

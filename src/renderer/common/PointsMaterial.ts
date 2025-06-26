@@ -1,16 +1,13 @@
 import { RawShaderMaterial, Vector2 } from "three";
 
-import { createBoxTexture, createLegacyJetTextureData, generateLegacyJetTextureData } from "../utils";
+import { createLegacyJetTextureData, generateLegacyJetTextureData } from "../utils";
 import fragmentShader from "./shaders/points.fs?raw";
 import vertexShader from "./shaders/points.vs?raw";
-// import fragmentShader from "./shaders/highlight.fs?raw";
-// import vertexShader from "./shaders/highlight.vs?raw";
 
 interface IDefines {
   USE_COLOR?: boolean;
   USE_GRADIENT_TEXTURE?: boolean;
-  BOX_TEX_WIDTH?: number;
-  BOX_COUNT?: number;
+  USE_HIGHLIGHT_BOX?: boolean;
 }
 
 function makeUniform<T extends keyof UniformValueMap>(type: T, value: UniformValueMap[T]) {
@@ -21,9 +18,9 @@ function makeNullableUniform<T extends keyof UniformValueMap>(type: T, value: Un
   return { type, value };
 }
 
-function watchUniforms(execute: (ctx: PointsMaterial) => void) {
-  return function (target: PointsMaterial, propertyKey: string) {
-    const privateKey = Symbol();
+export function watchUniforms(execute: (ctx: PointsMaterial) => void) {
+  return function watchUniformsDecorator(target: PointsMaterial, propertyKey: string) {
+    const privateKey = Symbol(`private__${propertyKey}`);
 
     Object.defineProperty(target, propertyKey, {
       configurable: true,
@@ -33,6 +30,8 @@ function watchUniforms(execute: (ctx: PointsMaterial) => void) {
       },
       set(value) {
         for (const key in value) {
+          if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
+
           const uniform = value[key];
 
           value[key] = new Proxy(uniform, {
@@ -59,10 +58,6 @@ export default class PointsMaterial extends RawShaderMaterial {
 
   defines: IDefines = {};
 
-  private _boxTextureWidth = 1;
-
-  private _boxCount = 1;
-
   constructor() {
     super({
       vertexShader,
@@ -78,12 +73,12 @@ export default class PointsMaterial extends RawShaderMaterial {
       /** 透明度 */
       opacity: makeUniform("f", 1.0),
       /** 纯色 */
-      color: makeNullableUniform("v3", null),
+      color: makeNullableUniform("c", null),
       /** 渐变纹理: 优先级高于color */
       gradientTexture: makeNullableUniform("t", null),
       gradientRange: makeNullableUniform("v2", new Vector2(-7, 3)),
-      /** 3D框纹理 */
-      boxTexture: makeNullableUniform("t", null),
+      /** 高亮盒子 */
+      highlightBox: makeNullableUniform("highlightBox", null),
     };
 
     // 默认使用渐变纹理
@@ -93,52 +88,21 @@ export default class PointsMaterial extends RawShaderMaterial {
   }
 
   setGradientTexture(data: Float32Array | null) {
+    const oldTexture = this.uniforms.gradientTexture.value;
     if (data === null) {
-      this.uniforms.gradientTexture.value?.dispose();
+      oldTexture?.dispose();
       this.uniforms.gradientTexture.value = null;
+    } else if (oldTexture?.image.data.length === data.length) {
+      // 复用旧 texture，只替换数据
+      oldTexture.image.data.set(data);
+      oldTexture.needsUpdate = true;
     } else {
-      const oldTexture = this.uniforms.gradientTexture.value;
+      // 创建新的纹理
+      oldTexture?.dispose();
 
-      if (oldTexture?.image.data.length === data.length) {
-        // 复用旧 texture，只替换数据
-        oldTexture.image.data.set(data);
-        oldTexture.needsUpdate = true;
-      } else {
-        // 创建新的纹理
-        oldTexture?.dispose();
+      const gradientTexture = createLegacyJetTextureData(data);
 
-        const gradientTexture = createLegacyJetTextureData(data);
-
-        this.uniforms.gradientTexture.value = gradientTexture;
-      }
-    }
-  }
-
-  setBoxTexture(data: null): void;
-  setBoxTexture(data: Float32Array, width: number, height: number): void;
-  setBoxTexture(data: Float32Array | null, width = 1, height = 1) {
-    this._boxTextureWidth = width;
-    this._boxCount = height;
-
-    if (data === null) {
-      this.uniforms.boxTexture.value?.dispose();
-      this.uniforms.boxTexture.value = null;
-    } else {
-      const oldTexture = this.uniforms.boxTexture.value;
-
-      if (oldTexture?.image.data.length === data.length) {
-        // 复用旧 texture，只替换数据
-        oldTexture.image.data.set(data);
-        oldTexture.needsUpdate = true;
-        this.update();
-      } else {
-        // 创建新的纹理
-        oldTexture?.dispose();
-
-        const boxTexture = createBoxTexture(data, width, height);
-
-        this.uniforms.boxTexture.value = boxTexture;
-      }
+      this.uniforms.gradientTexture.value = gradientTexture;
     }
   }
 
@@ -149,8 +113,9 @@ export default class PointsMaterial extends RawShaderMaterial {
     } else if (this.uniforms.color.value) {
       this.defines.USE_COLOR = true;
     }
-    this.defines.BOX_TEX_WIDTH = this._boxTextureWidth;
-    this.defines.BOX_COUNT = this._boxCount;
+    if (this.uniforms.highlightBox.value) {
+      this.defines.USE_HIGHLIGHT_BOX = true;
+    }
 
     this.needsUpdate = true;
   }

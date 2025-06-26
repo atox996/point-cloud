@@ -82,10 +82,6 @@ const Home = () => {
       return createBox3D(center, size, rotation, color);
     });
     shareScene.addObject(...boxes);
-    shareScene.views.forEach((view) => {
-      view.focus(shareScene.originHelper);
-    });
-    console.log(shareScene);
 
     return () => {
       mainViewer.current?.dispose();

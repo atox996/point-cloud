@@ -4,7 +4,6 @@ import {
   DataTexture,
   FloatType,
   LinearFilter,
-  RGBAFormat,
   RGBFormat,
   type Vector3Like,
 } from "three";
@@ -146,69 +145,3 @@ export const createLegacyJetTextureData = (data: Float32Array) => {
 
   return texture;
 };
-
-/**
- * 生成Box信息纹理数据 (Float32Array)
- * @param boxes - BoxData数组
- * @returns RGBA纹理数据
- */
-export function generateBoxTextureData(boxes: BoxTextureData[]) {
-  const boxCount = boxes.length;
-  if (boxCount === 0) {
-    throw new Error("generateBoxInfoTextureData: boxes array is empty");
-  }
-
-  const floatsPerBox = 28; // 原数据里每 box 占 28 float
-  const floatsPerTexel = 4; // RGBA = 4 float
-
-  const texelsPerBox = Math.ceil(floatsPerBox / floatsPerTexel); // 每box需要几个texel
-  const texWidth = texelsPerBox; // 每行宽度
-  const texHeight = boxCount; // 每行对应一个 box
-
-  const totalTexelCount = texWidth * texHeight;
-  const totalFloatCount = totalTexelCount * floatsPerTexel;
-
-  const data = new Float32Array(totalFloatCount);
-
-  boxes.forEach((boxData, i) => {
-    const baseIndex = i * texWidth * floatsPerTexel;
-
-    // bbox min/max (6 floats)
-    data[baseIndex + 0] = boxData.bbox.min.x;
-    data[baseIndex + 1] = boxData.bbox.min.y;
-    data[baseIndex + 2] = boxData.bbox.min.z;
-
-    data[baseIndex + 3] = boxData.bbox.max.x;
-    data[baseIndex + 4] = boxData.bbox.max.y;
-    data[baseIndex + 5] = boxData.bbox.max.z;
-
-    // 2个float(6,7)留空0填充
-    data[baseIndex + 6] = 0;
-    data[baseIndex + 7] = 0;
-
-    // inverseMatrix 16 floats，按列主序展开
-    const m = boxData.inverseMatrix.elements;
-    for (let j = 0; j < 16; j++) {
-      data[baseIndex + 8 + j] = m[j];
-    }
-
-    // color (3 floats)
-    data[baseIndex + 24] = boxData.color.r;
-    data[baseIndex + 25] = boxData.color.g;
-    data[baseIndex + 26] = boxData.color.b;
-
-    // opacity (1 float)
-    data[baseIndex + 27] = boxData.opacity;
-  });
-
-  return { data, width: texWidth, height: texHeight };
-}
-
-export function createBoxTexture(data: Float32Array, width: number, height: number): DataTexture {
-  const texture = new DataTexture(data, width, height, RGBAFormat, FloatType);
-  texture.minFilter = texture.magFilter = LinearFilter;
-  texture.unpackAlignment = 1;
-  texture.needsUpdate = true;
-
-  return texture;
-}

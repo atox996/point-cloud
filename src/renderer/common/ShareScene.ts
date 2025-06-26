@@ -1,7 +1,6 @@
 import { AxesHelper, Box3, Box3Helper, EventDispatcher, Group, Plane, PlaneHelper, Scene, Vector3 } from "three";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 
-import { generateBoxTextureData } from "../utils";
 import type Viewer from "../views/Viewer";
 import type Box3D from "./objects/Box3D";
 import Points, { type PointsData } from "./Points";
@@ -91,6 +90,7 @@ export default class ShareScene extends EventDispatcher<TEventMap> {
       this.selectionMap.set(obj.uuid, obj);
     });
     this.dispatchEvent({ type: "select", selection: this.selection, preSelection });
+    this.render();
   }
 
   selectObjectByUUID(...uuids: string[]) {
@@ -161,23 +161,19 @@ export default class ShareScene extends EventDispatcher<TEventMap> {
   }
 
   updateMaterial() {
-    const annotations3D = this.getAnnotations3D();
-    if (!annotations3D.length) {
-      this.material.setBoxTexture(null);
+    const focusObject = this.selection.at(-1);
+    if (focusObject) {
+      focusObject.updateMatrixWorld();
+      if (!focusObject.geometry.boundingBox) focusObject.geometry.computeBoundingBox();
+      const bbox = focusObject.geometry.boundingBox!;
+      this.material.uniforms.highlightBox.value = {
+        min: bbox.min,
+        max: bbox.max,
+        inverseMatrix: focusObject.matrixWorld.clone().invert(),
+        color: focusObject.color,
+      };
     } else {
-      const boxes = annotations3D.map<BoxTextureData>((box) => {
-        box.updateMatrixWorld();
-        if (!box.geometry.boundingBox) box.geometry.computeBoundingBox();
-        const bbox = box.geometry.boundingBox!;
-        return {
-          bbox,
-          inverseMatrix: box.matrixWorld.clone().invert(),
-          color: box.color,
-          opacity: 1,
-        };
-      });
-      const { data, width, height } = generateBoxTextureData(boxes);
-      this.material.setBoxTexture(data, width, height);
+      this.material.uniforms.highlightBox.value = null;
     }
   }
 }
