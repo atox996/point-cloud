@@ -42,6 +42,7 @@ export default class ImageViewer extends Viewer {
   renderFrame(): void {
     this.cameraHelper?.update();
     // TODO: 定制化渲染
-    this.renderer.render(this.shareScene.scene, this.camera);
+    const { scene } = this.shareScene;
+    this.renderer.render(scene, this.camera);
   }
 }

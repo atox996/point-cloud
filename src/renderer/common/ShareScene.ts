@@ -1,5 +1,7 @@
 import { AxesHelper, Box3, Box3Helper, EventDispatcher, Group, Plane, PlaneHelper, Scene, Vector3 } from "three";
+import Stats from "three/examples/jsm/libs/stats.module.js";
 
+import { generateBoxTextureData } from "../utils";
 import type Viewer from "../views/Viewer";
 import type Box3D from "./objects/Box3D";
 import Points, { type PointsData } from "./Points";
@@ -37,14 +39,23 @@ export default class ShareScene extends EventDispatcher<TEventMap> {
     this.annotations3D.name = "annotations3D";
 
     this.ground = new PlaneHelper(new Plane(new Vector3(0, 0, -1), 0), 100, 0xeeeeee);
+    this.ground.visible = false;
 
-    this.originHelper = new Box3Helper(new Box3(new Vector3(-100, -100, -100), new Vector3(100, 100, 100)), 0xffff00);
+    this.originHelper = new Box3Helper(new Box3(new Vector3(-50, -50, -50), new Vector3(50, 50, 50)), 0xffff00);
     this.originHelper.visible = false;
 
     const axesHelper = new AxesHelper(100);
     axesHelper.visible = false;
 
     this.scene.add(this.pointsGroup, this.annotations3D, this.ground, this.originHelper, axesHelper);
+
+    const stats = new Stats();
+    document.body.appendChild(stats.dom);
+    const frame = () => {
+      stats.update();
+      requestAnimationFrame(frame);
+    };
+    frame();
   }
 
   addObject(...objects: Box3D[]) {
@@ -140,11 +151,33 @@ export default class ShareScene extends EventDispatcher<TEventMap> {
     if (this._renderTimer) return;
     this._renderTimer = requestAnimationFrame(() => {
       this.dispatchEvent({ type: "renderBefore" });
+      this.updateMaterial();
       this.views.forEach((view) => {
         view.render();
       });
       this.dispatchEvent({ type: "renderAfter" });
       this._renderTimer = 0;
     });
+  }
+
+  updateMaterial() {
+    const annotations3D = this.getAnnotations3D();
+    if (!annotations3D.length) {
+      this.material.setBoxTexture(null);
+    } else {
+      const boxes = annotations3D.map<BoxTextureData>((box) => {
+        box.updateMatrixWorld();
+        if (!box.geometry.boundingBox) box.geometry.computeBoundingBox();
+        const bbox = box.geometry.boundingBox!;
+        return {
+          bbox,
+          inverseMatrix: box.matrixWorld.clone().invert(),
+          color: box.color,
+          opacity: 1,
+        };
+      });
+      const { data, width, height } = generateBoxTextureData(boxes);
+      this.material.setBoxTexture(data, width, height);
+    }
   }
 }

@@ -46,7 +46,7 @@ export default class OrthographicViewer extends Viewer {
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableRotate = false;
-    this.controls.addEventListener("change", () => this.shareScene.render());
+    this.controls.addEventListener("change", () => this.render());
   }
   initEvent(): void {
     this.shareScene.addEventListener("select", ({ selection, target }) => {
@@ -166,6 +166,7 @@ export default class OrthographicViewer extends Viewer {
   renderFrame(): void {
     this.cameraHelper.update();
     // TODO: 定制化渲染
-    this.renderer.render(this.shareScene.scene, this.camera);
+    const { scene } = this.shareScene;
+    this.renderer.render(scene, this.camera);
   }
 }

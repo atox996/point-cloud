@@ -1,7 +1,9 @@
 import classNames from "classnames";
+import { Color, MathUtils, Vector3 } from "three";
 
 import BoxSvg from "@/assets/box.svg?react";
 import { OrthographicViewer, PerspectiveViewer } from "@/renderer";
+import { createBox3D } from "@/renderer/utils";
 import { useShareContext } from "@/stores/ShareContext";
 
 import styles from "./index.module.less";
@@ -48,6 +50,38 @@ const Home = () => {
       axis: "-x",
       name: "rear",
     });
+    const randomVector2 = (min: number, max: number): Vector3 => {
+      return new Vector3(
+        MathUtils.randFloat(min, max),
+        MathUtils.randFloat(min, max),
+        0, // z 固定为 0
+      );
+    };
+
+    const randomSize = (): Vector3 => {
+      return new Vector3(
+        MathUtils.randFloat(0.5, 3),
+        MathUtils.randFloat(0.5, 3),
+        MathUtils.randFloat(0.5, 3), // z 尺寸可以随意
+      );
+    };
+
+    const randomZRotation = (): Vector3 => {
+      return new Vector3(0, 0, MathUtils.randFloat(0, Math.PI * 2));
+    };
+
+    const randomColor = (): Color => {
+      return new Color(Math.random(), Math.random(), Math.random());
+    };
+
+    const boxes = Array.from({ length: 1000 }, () => {
+      const center = randomVector2(-200, 200); // xy 随机，z=0
+      const size = randomSize(); // 任意 size
+      const rotation = randomZRotation(); // 只绕 z 轴旋转
+      const color = randomColor();
+      return createBox3D(center, size, rotation, color);
+    });
+    shareScene.addObject(...boxes);
     shareScene.views.forEach((view) => {
       view.focus(shareScene.originHelper);
     });
