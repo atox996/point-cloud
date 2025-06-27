@@ -18,17 +18,25 @@ interface TEventMap {
 
 export default class ShareScene extends EventDispatcher<TEventMap> {
   scene: Scene;
+
   pointsGroup: Group;
+
   annotations3D: Group;
+
   ground: PlaneHelper;
 
   selection: Box3D[] = [];
+
   selectionMap = new Map<string, Box3D>();
+
   views: Viewer[] = [];
+
   material = new PointsMaterial();
 
   originHelper: Box3Helper;
+
   private _renderTimer = 0;
+
   constructor() {
     super();
     this.scene = new Scene();
@@ -40,7 +48,7 @@ export default class ShareScene extends EventDispatcher<TEventMap> {
     this.ground = new PlaneHelper(new Plane(new Vector3(0, 0, -1), 0), 100, 0xeeeeee);
     this.ground.visible = false;
 
-    this.originHelper = new Box3Helper(new Box3(new Vector3(-50, -50, -50), new Vector3(50, 50, 50)), 0xffff00);
+    this.originHelper = new Box3Helper(new Box3(new Vector3(-20, -20, -20), new Vector3(20, 20, 20)), 0xffff00);
     this.originHelper.visible = false;
 
     const axesHelper = new AxesHelper(100);
@@ -90,7 +98,6 @@ export default class ShareScene extends EventDispatcher<TEventMap> {
       this.selectionMap.set(obj.uuid, obj);
     });
     this.dispatchEvent({ type: "select", selection: this.selection, preSelection });
-    this.render();
   }
 
   selectObjectByUUID(...uuids: string[]) {

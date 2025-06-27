@@ -11,12 +11,18 @@ export default class OrbitControlsAction extends Action {
     super(viewer);
 
     this.controller = new OrbitControls(viewer.camera, viewer.renderer.domElement);
-    this.controller.enableRotate = viewer.isPerspectiveViewer;
+    // 透视相机才可以旋转
+    this.controller.enableRotate = "isPerspectiveCamera" in viewer.camera;
     this.controller.addEventListener("change", () => viewer.render());
   }
 
-  focus(pos = new Vector3()) {
-    this.controller.target.copy(pos);
+  focus(pos?: Vector3, forceUpdate = false) {
+    if (pos) {
+      this.controller.target.copy(pos);
+    } else {
+      this.controller.target.setScalar(0);
+    }
+    if (forceUpdate) this.controller.update();
   }
 
   toggle(enabled?: boolean): void {
@@ -24,20 +30,11 @@ export default class OrbitControlsAction extends Action {
     this.controller.enabled = this.enabled;
   }
 
-  onSelect = () => {
-    const { selection } = this.viewer.shareScene;
-    const object = selection.at(-1);
-    if (object) {
-      this.focus(object.position);
-    }
-  };
-
   init(): void {
-    this.viewer.shareScene.addEventListener("select", this.onSelect);
+    // nothing to do
   }
 
   dispose(): void {
-    this.viewer.shareScene.removeEventListener("select", this.onSelect);
     this.controller.dispose();
   }
 }

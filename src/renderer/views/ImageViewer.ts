@@ -33,6 +33,10 @@ export default class ImageViewer extends Viewer {
     console.log("initEvent");
   }
 
+  disposeEvent(): void {
+    console.log("disposeEvent");
+  }
+
   resize(): void {
     super.resize();
   }
