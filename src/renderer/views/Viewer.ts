@@ -105,9 +105,8 @@ export default abstract class Viewer extends EventDispatcher<TEventMap> {
 
   dispose() {
     this.enabled = false;
-    this.camera.removeFromParent();
-    this.shareScene.removeView(this);
     this.disposeEvent();
+    this.shareScene.removeView(this);
     this.actionMap.forEach((action) => {
       action.dispose();
     });
