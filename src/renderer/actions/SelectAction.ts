@@ -46,7 +46,7 @@ export default class SelectAction extends Action {
     const annotate3D = this.viewer.shareScene.getAnnotations3D();
 
     _raycaster.setFromCamera(_upPos, this.viewer.camera);
-    const intersects = _raycaster.intersectObjects<Box3D>(annotate3D);
+    const intersects = _raycaster.intersectObjects<Box3D>(annotate3D, false);
     if (intersects.length > 0) return intersects[0].object;
   }
 
