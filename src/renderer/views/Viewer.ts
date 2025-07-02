@@ -1,9 +1,8 @@
 import { debounce } from "lodash-es";
-import { Camera, EventDispatcher, MathUtils, Vector3, WebGLRenderer } from "three";
+import { Camera, EventDispatcher, MathUtils, Mesh, Vector3, WebGLRenderer } from "three";
 import { Tween } from "three/examples/jsm/libs/tween.module.js";
 
 import { type ActionInstanceMap, type ActionName, Actions } from "../actions";
-import type Box3D from "../common/objects/Box3D";
 import type ShareScene from "../common/ShareScene";
 
 interface TEventMap {
@@ -30,7 +29,7 @@ export default abstract class Viewer extends EventDispatcher<TEventMap> {
 
   autoFocus = true;
 
-  focusObject?: Box3D;
+  focusObject?: Mesh;
 
   actionMap = new Map<ActionName, ActionInstanceMap[ActionName]>();
 
@@ -105,6 +104,11 @@ export default abstract class Viewer extends EventDispatcher<TEventMap> {
 
   dispose() {
     this.enabled = false;
+    // Cancel any pending render
+    if (this._renderTimer) {
+      cancelAnimationFrame(this._renderTimer);
+      this._renderTimer = 0;
+    }
     this.disposeEvent();
     this.shareScene.removeView(this);
     this.actionMap.forEach((action) => {
@@ -114,6 +118,8 @@ export default abstract class Viewer extends EventDispatcher<TEventMap> {
     this.renderer.dispose();
     this.renderer.domElement.remove();
     this._resizeObserver.disconnect();
+    this._tween?.stop();
+    this._tween = null;
   }
 
   getAction<T extends ActionName>(name: T) {
@@ -186,7 +192,7 @@ export default abstract class Viewer extends EventDispatcher<TEventMap> {
 
   abstract disposeEvent(): void;
 
-  abstract focus(object?: Box3D): void;
+  abstract focus(object?: Mesh): void;
 
   abstract renderFrame(): void;
 }

@@ -1,5 +1,6 @@
 import classNames from "classnames";
 import { Color, MathUtils, Vector3 } from "three";
+import Stats from "three/examples/jsm/libs/stats.module.js";
 
 import BoxSvg from "@/assets/box.svg?react";
 import { OrthographicViewer, PerspectiveViewer } from "@/renderer";
@@ -50,6 +51,13 @@ const Home = () => {
       axis: "-x",
       name: "rear",
     });
+    const stats = new Stats();
+    document.body.appendChild(stats.dom);
+    const frame = () => {
+      requestAnimationFrame(frame);
+      stats.update();
+    };
+    frame();
     const randomVector2 = (min: number, max: number): Vector3 => {
       return new Vector3(
         MathUtils.randFloat(min, max),
@@ -74,12 +82,13 @@ const Home = () => {
       return new Color(Math.random(), Math.random(), Math.random());
     };
 
-    const boxes = Array.from({ length: 1000 }, () => {
+    const boxes = Array.from({ length: 100000 }, () => {
+      const id = MathUtils.generateUUID();
       const center = randomVector2(-200, 200); // xy 随机，z=0
       const size = randomSize(); // 任意 size
       const rotation = randomZRotation(); // 只绕 z 轴旋转
       const color = randomColor();
-      return createBox3D(center, size, rotation, color);
+      return createBox3D({ id, center, size, rotation, color });
     });
     shareScene.addObject(...boxes);
 
@@ -88,7 +97,8 @@ const Home = () => {
       overhead.current?.dispose();
       side.current?.dispose();
       rear.current?.dispose();
-      shareScene.removeObject(...shareScene.getAnnotations3D());
+      shareScene.clearData();
+      stats.dom.remove();
     };
   }, []);
 

@@ -1,6 +1,5 @@
 import { Raycaster, Vector2 } from "three";
 
-import Box3D from "../common/objects/Box3D";
 import Action from "./Action";
 
 const _downPos = new Vector2();
@@ -41,16 +40,19 @@ export default class SelectAction extends Action {
     container.removeEventListener("pointerup", this.onPointerUp);
   }
 
-  getObject(event: MouseEvent) {
+  getObject(event: PointerEvent) {
     this.updateProjectPos(event);
-    const annotate3D = this.viewer.shareScene.getAnnotations3D();
-
+    const { boxes } = this.viewer.shareScene;
+    boxes.mesh.computeBoundingSphere();
     _raycaster.setFromCamera(_upPos, this.viewer.camera);
-    const intersects = _raycaster.intersectObjects<Box3D>(annotate3D, false);
-    if (intersects.length > 0) return intersects[0].object;
+    const intersects = _raycaster.intersectObjects([boxes.mesh], false);
+    if (intersects.length > 0 && intersects[0].instanceId !== undefined) {
+      const id = boxes.getInstanceIdFromRenderId(intersects[0].instanceId);
+      if (id) return boxes.getVirtualMesh(id);
+    }
   }
 
-  updateProjectPos(event: MouseEvent) {
+  updateProjectPos(event: PointerEvent) {
     const x = (event.offsetX / this.viewer.width) * 2 - 1;
     const y = (-event.offsetY / this.viewer.height) * 2 + 1;
     _upPos.set(x, y);

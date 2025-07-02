@@ -8,7 +8,7 @@ declare global {
 
   type EmptyObject = {};
 
-  type UniformValueMap = {
+  interface UniformValueMap {
     t: Texture;
     c: Color;
     f: number;
@@ -23,5 +23,5 @@ declare global {
       color: Color;
       inverseMatrix: Matrix4;
     };
-  };
+  }
 }

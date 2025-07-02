@@ -1,7 +1,6 @@
 import { PerspectiveCamera, Vector3 } from "three";
 
 import type { ActionName } from "../actions";
-import Box3D from "../common/objects/Box3D";
 import type ShareScene from "../common/ShareScene";
 import Viewer from "./Viewer";
 
@@ -29,7 +28,7 @@ export default class PerspectiveViewer extends Viewer {
   }
 
   private _onSelect = () => {
-    const object = this.shareScene.selection.find((o) => o instanceof Box3D);
+    const object = [...this.shareScene.selectionMap.values()].at(-1);
 
     if (object) {
       if (this.autoFocus) this.focus(object);

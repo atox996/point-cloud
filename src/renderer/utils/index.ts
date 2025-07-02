@@ -2,28 +2,35 @@ import {
   Color,
   type ColorRepresentation,
   DataTexture,
+  Euler,
   FloatType,
   LinearFilter,
+  Quaternion,
   RGBFormat,
+  Vector3,
   type Vector3Like,
 } from "three";
 
-import Box3D from "../common/objects/Box3D";
+import type { InstanceAttributes } from "./InstancedMeshManagger";
 
-export const createBox3D = <T extends EmptyObject = EmptyObject>(
-  center: Vector3Like,
-  size: Vector3Like,
-  rotation: Vector3Like,
-  color: ColorRepresentation,
-  userData?: T,
-) => {
-  const box3D = new Box3D();
-  box3D.position.copy(center);
-  box3D.scale.copy(size);
-  box3D.rotation.set(rotation.x, rotation.y, rotation.z);
-  box3D.color.set(color);
-  box3D.userData = userData || {};
-  return box3D;
+export const createBox3D = <T extends EmptyObject = EmptyObject>(data: {
+  id: string;
+  center: Vector3Like;
+  size: Vector3Like;
+  rotation: Vector3Like;
+  color: ColorRepresentation;
+  userData?: T;
+}): InstanceAttributes<T> => {
+  const euler = new Euler(data.rotation.x, data.rotation.y, data.rotation.z);
+  const quaternion = new Quaternion().setFromEuler(euler);
+  return {
+    id: data.id,
+    position: new Vector3().copy(data.center),
+    scale: new Vector3().copy(data.size),
+    quaternion,
+    color: new Color(data.color),
+    userData: data.userData,
+  };
 };
 
 const COLOR_STOPS = [

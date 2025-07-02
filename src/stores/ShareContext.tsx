@@ -9,9 +9,17 @@ interface SharedContextType {
 const SharedContext = createContext<SharedContextType | null>(null);
 
 export function SharedProvider({ children }: { children: ReactNode }) {
-  const shareScene = new ShareScene();
-
-  return <SharedContext.Provider value={{ shareScene }}>{children}</SharedContext.Provider>;
+  const shareSceneRef = useRef<ShareScene>(null);
+  // 单例初始化
+  if (!shareSceneRef.current) {
+    shareSceneRef.current = new ShareScene();
+  }
+  useEffect(() => {
+    return () => {
+      shareSceneRef.current?.dispose();
+    };
+  }, []);
+  return <SharedContext.Provider value={{ shareScene: shareSceneRef.current }}>{children}</SharedContext.Provider>;
 }
 
 export const useShareContext = () => {
