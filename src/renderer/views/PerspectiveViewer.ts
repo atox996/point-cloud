@@ -28,12 +28,12 @@ export default class PerspectiveViewer extends Viewer {
   }
 
   private _onSelect = () => {
-    const object = [...this.shareScene.selectionMap.values()].at(-1);
+    const instanceId = [...this.shareScene.selection.values()].at(-1);
 
-    if (object) {
-      if (this.autoFocus) this.focus(object);
+    if (instanceId) {
+      if (this.autoFocus) this.focus(instanceId);
     } else {
-      this.focusObject = undefined;
+      this.focusInstanceId = undefined;
     }
     this.render();
   };
@@ -52,11 +52,11 @@ export default class PerspectiveViewer extends Viewer {
     super.resize();
   }
 
-  focus(object = this.focusObject): void {
-    if (!object) return;
-    this.focusObject = object;
+  focus(instanceId = this.focusInstanceId): void {
+    if (!instanceId) return;
+    this.focusInstanceId = instanceId;
 
-    object.getWorldPosition(_vec3a);
+    _vec3a.copy(this.shareScene.boxes.getWorldPosition(instanceId));
 
     const action = this.getAction("OrbitControls");
     if (action) {

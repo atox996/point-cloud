@@ -1,4 +1,4 @@
-import { AxesHelper, Box3, Box3Helper, EventDispatcher, Group, Mesh, Plane, PlaneHelper, Scene, Vector3 } from "three";
+import { AxesHelper, Box3, Box3Helper, EventDispatcher, Group, Plane, PlaneHelper, Scene, Vector3 } from "three";
 
 import type { InstanceAttributes } from "../utils/InstancedMeshManagger";
 import type Viewer from "../views/Viewer";
@@ -25,7 +25,7 @@ export default class ShareScene extends EventDispatcher<TEventMap> {
 
   ground: PlaneHelper;
 
-  selectionMap = new Map<string, Mesh>();
+  selection = new Set<string>();
 
   views: Viewer[] = [];
 
@@ -54,39 +54,34 @@ export default class ShareScene extends EventDispatcher<TEventMap> {
     this.scene.add(this.pointsGroup, this.boxes.mesh, this.ground, this.originHelper, axesHelper);
   }
 
-  addObject(...objects: InstanceAttributes[]) {
+  addObject(objects: InstanceAttributes[]) {
     this.boxes.upsert(objects);
     this.dispatchEvent({ type: "addObject", ids: objects.map((item) => item.id) });
     this.render();
   }
 
-  removeObject(...ids: string[]) {
+  removeObject(ids: string[]) {
     let selectFlag = false;
     ids.forEach((id) => {
       this.boxes.remove([id]);
-      if (this.selectionMap.has(id)) {
+      if (this.selection.has(id)) {
         selectFlag = true;
-        this.selectionMap.delete(id);
+        this.selection.delete(id);
       }
     });
     this.dispatchEvent({ type: "removeObject", ids });
     if (selectFlag) {
-      this.selectObject(...this.selectionMap.values());
+      this.selectObject(Array.from(this.selection.values()));
     }
     this.render();
   }
 
-  selectObject(...objects: Mesh[]) {
-    this.selectionMap.clear();
-    objects.forEach((obj) => {
-      this.selectionMap.set(obj.uuid, obj);
+  selectObject(ids: string[] = []) {
+    this.selection.clear();
+    ids.forEach((id) => {
+      this.selection.add(id);
     });
-    this.dispatchEvent({ type: "select", ids: objects.map((item) => item.uuid) });
-  }
-
-  selectObjectById(...ids: string[]) {
-    const selection = ids.map((id) => this.boxes.getVirtualMesh(id));
-    this.selectObject(...selection);
+    this.dispatchEvent({ type: "select", ids });
   }
 
   clearData() {
@@ -148,7 +143,7 @@ export default class ShareScene extends EventDispatcher<TEventMap> {
 
   dispose() {
     this.boxes.dispose();
-    this.selectionMap.clear();
+    this.selection.clear();
     this.views.forEach((view) => {
       view.dispose();
     });

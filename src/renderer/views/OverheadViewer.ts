@@ -88,11 +88,11 @@ export default class OverheadViewer extends OrthographicViewer {
    * 聚焦到指定对象（默认为当前 focusObject）
    * 只移动相机的 x, y 位置，保持俯视角度看地面 (z=0)
    */
-  override focus(object = this.focusObject) {
-    if (!object) return;
-    this.focusObject = object;
+  override focus(instanceId = this.focusInstanceId) {
+    if (!instanceId) return;
+    this.focusInstanceId = instanceId;
 
-    object.getWorldPosition(_vec3a);
+    _vec3a.copy(this.shareScene.boxes.getWorldPosition(instanceId));
 
     const xMask = Math.abs(this.viewDirection.x);
     const yMask = Math.abs(this.viewDirection.y);

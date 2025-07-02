@@ -55,12 +55,12 @@ export default class OrthographicViewer extends Viewer {
   }
 
   private _onSelect = () => {
-    const object = [...this.shareScene.selectionMap.values()].at(-1);
+    const instanceId = [...this.shareScene.selection.values()].at(-1);
 
-    if (object) {
-      if (this.autoFocus) this.focus(object);
+    if (instanceId) {
+      if (this.autoFocus) this.focus(instanceId);
     } else {
-      this.focusObject = undefined;
+      this.focusInstanceId = undefined;
     }
     this.render();
   };
@@ -86,26 +86,23 @@ export default class OrthographicViewer extends Viewer {
     this.viewDirection.setScalar(0);
     this.viewDirection[letter as PositiveAxis<Axis>] = sign === "-" ? -1 : 1;
 
-    if (this.focusObject) this.focus();
+    if (this.focusInstanceId) this.focus();
     this.render();
   }
 
-  focus(object = this.focusObject) {
-    if (!object) return;
-    this.focusObject = object;
+  focus(instanceId = this.focusInstanceId) {
+    if (!instanceId) return;
+    this.focusInstanceId = instanceId;
 
-    object.updateMatrixWorld();
+    const matrixWorld = this.shareScene.boxes.getWorldMatrix(instanceId);
 
-    _vector3.copy(this.viewDirection).multiplyScalar(0.5).applyMatrix4(object.matrixWorld);
+    _vector3.copy(this.viewDirection).multiplyScalar(0.5).applyMatrix4(matrixWorld);
     this.camera.position.copy(_vector3);
 
-    _vector3
-      .copy(AXIS_UP_MAPPING[this.axis])
-      .applyMatrix4(object.matrixWorld)
-      .sub(new Vector3().applyMatrix4(object.matrixWorld));
+    _vector3.copy(AXIS_UP_MAPPING[this.axis]).applyMatrix4(matrixWorld).sub(new Vector3().applyMatrix4(matrixWorld));
     this.camera.up.copy(_vector3);
 
-    _vector3.setScalar(0).applyMatrix4(object.matrixWorld);
+    _vector3.setScalar(0).applyMatrix4(matrixWorld);
 
     const action = this.getAction("OrbitControls");
     if (action) {
@@ -120,24 +117,23 @@ export default class OrthographicViewer extends Viewer {
   }
 
   updateProjectRect() {
-    if (!this.focusObject) return;
+    if (!this.focusInstanceId) return;
 
-    const { focusObject, camera } = this;
+    const { focusInstanceId, camera } = this;
 
     camera.updateMatrixWorld();
-    focusObject.updateMatrixWorld();
 
-    if (!focusObject.geometry.boundingBox) focusObject.geometry.computeBoundingBox();
-    const bbox = focusObject.geometry.boundingBox!;
+    const matrixWorld = this.shareScene.boxes.getWorldMatrix(focusInstanceId);
+    const bbox = this.shareScene.boxes.getWorldBox(focusInstanceId);
 
     // === min 点投影到相机空间 ===
-    _vector3.copy(bbox.min).applyMatrix4(focusObject.matrixWorld).applyMatrix4(camera.matrixWorldInverse);
+    _vector3.copy(bbox.min).applyMatrix4(matrixWorld).applyMatrix4(camera.matrixWorldInverse);
     const xMin = _vector3.x;
     const yMin = _vector3.y;
     const zMin = _vector3.z;
 
     // === max 点投影到相机空间 ===
-    _vector3.copy(bbox.max).applyMatrix4(focusObject.matrixWorld).applyMatrix4(camera.matrixWorldInverse);
+    _vector3.copy(bbox.max).applyMatrix4(matrixWorld).applyMatrix4(camera.matrixWorldInverse);
     const xMax = _vector3.x;
     const yMax = _vector3.y;
     const zMax = _vector3.z;
@@ -169,12 +165,13 @@ export default class OrthographicViewer extends Viewer {
     const { pointsGroup, material } = this.shareScene;
     // TODO: 点云颜色
 
-    if (this.focusObject) {
+    if (this.focusInstanceId) {
       const oldDepthTest = material.depthTest;
       material.depthTest = false;
       this.renderer.render(pointsGroup, this.camera);
       material.depthTest = oldDepthTest;
-      this.renderer.render(this.focusObject, this.camera);
+      const mesh = this.shareScene.boxes.getVirtualMesh(this.focusInstanceId);
+      this.renderer.render(mesh, this.camera);
     } else {
       this.renderer.render(pointsGroup, this.camera);
     }

@@ -19,9 +19,9 @@ export default class SelectAction extends Action {
     if (!this.enabled) return;
     const distance = _upPos.set(event.offsetX, event.offsetY).distanceTo(_downPos);
     if (this._mouseDown && distance < 10) {
-      const object = this.getObject(event);
-      if (object) {
-        this.viewer.shareScene.selectObject(object);
+      const instanceId = this.getInstanceId(event);
+      if (instanceId) {
+        this.viewer.shareScene.selectObject([instanceId]);
       }
     }
     this._mouseDown = false;
@@ -40,15 +40,14 @@ export default class SelectAction extends Action {
     container.removeEventListener("pointerup", this.onPointerUp);
   }
 
-  getObject(event: PointerEvent) {
+  getInstanceId(event: PointerEvent) {
     this.updateProjectPos(event);
     const { boxes } = this.viewer.shareScene;
     boxes.mesh.computeBoundingSphere();
     _raycaster.setFromCamera(_upPos, this.viewer.camera);
     const intersects = _raycaster.intersectObjects([boxes.mesh], false);
     if (intersects.length > 0 && intersects[0].instanceId !== undefined) {
-      const id = boxes.getInstanceIdFromRenderId(intersects[0].instanceId);
-      if (id) return boxes.getVirtualMesh(id);
+      return boxes.getInstanceIdFromRenderId(intersects[0].instanceId);
     }
   }
 

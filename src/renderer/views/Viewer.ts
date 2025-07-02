@@ -1,5 +1,5 @@
 import { debounce } from "lodash-es";
-import { Camera, EventDispatcher, MathUtils, Mesh, Vector3, WebGLRenderer } from "three";
+import { Camera, EventDispatcher, MathUtils, Vector3, WebGLRenderer } from "three";
 import { Tween } from "three/examples/jsm/libs/tween.module.js";
 
 import { type ActionInstanceMap, type ActionName, Actions } from "../actions";
@@ -29,7 +29,7 @@ export default abstract class Viewer extends EventDispatcher<TEventMap> {
 
   autoFocus = true;
 
-  focusObject?: Mesh;
+  focusInstanceId?: string;
 
   actionMap = new Map<ActionName, ActionInstanceMap[ActionName]>();
 
@@ -192,7 +192,7 @@ export default abstract class Viewer extends EventDispatcher<TEventMap> {
 
   abstract disposeEvent(): void;
 
-  abstract focus(object?: Mesh): void;
+  abstract focus(instanceId?: string): void;
 
   abstract renderFrame(): void;
 }

@@ -1,4 +1,5 @@
 import {
+  Box3,
   type BufferGeometry,
   Color,
   DynamicDrawUsage,
@@ -21,6 +22,8 @@ export interface InstanceAttributes<T extends EmptyObject = EmptyObject> {
 
 const _reusableMatrix4 = new Matrix4();
 const _zeroScaleMatrix = new Matrix4().makeScale(0, 0, 0);
+const _reusableVector3 = new Vector3();
+const _reusableBox3 = new Box3();
 
 export default class InstancedMeshManagger<T extends EmptyObject = EmptyObject> {
   /** 实例化网格对象 */
@@ -135,6 +138,7 @@ export default class InstancedMeshManagger<T extends EmptyObject = EmptyObject> 
    * 获取实例对应的虚拟网格对象
    * @param instanceId 实例ID
    * @returns {Mesh} 虚拟网格对象
+   * @deprecated 请改用 {@link InstancedMeshManagger.getWorldMatrix} {@link InstancedMeshManagger.getWorldPosition} {@link InstancedMeshManagger.getWorldBox}
    */
   getVirtualMesh(instanceId: string): Mesh {
     const instance = this._instances.get(instanceId);
@@ -149,6 +153,40 @@ export default class InstancedMeshManagger<T extends EmptyObject = EmptyObject> 
     mesh.updateMatrix();
     mesh.updateMatrixWorld();
     return mesh;
+  }
+  /**
+   * 获取实例的世界矩阵
+   * @param instanceId 实例ID
+   * @returns {Matrix4} 实例世界矩阵
+   */
+  getWorldMatrix(instanceId: string): Matrix4 {
+    const index = this._instanceIndices.get(instanceId);
+    if (index === undefined) throw new Error(`Instance ${instanceId} not found`);
+
+    this.mesh.getMatrixAt(index, _reusableMatrix4);
+    if (this.mesh.matrixWorldNeedsUpdate) this.mesh.updateWorldMatrix(true, false);
+    return _reusableMatrix4.multiplyMatrices(this.mesh.matrixWorld, _reusableMatrix4);
+  }
+  /**
+   * 获取实例的世界坐标
+   * @param instanceId 实例ID
+   * @returns {Vector3} 实例世界坐标
+   */
+  getWorldPosition(instanceId: string): Vector3 {
+    const worldMatrix = this.getWorldMatrix(instanceId);
+    return _reusableVector3.setFromMatrixPosition(worldMatrix);
+  }
+  /**
+   * 获取实例的世界包围盒
+   * @param instanceId 实例ID
+   * @returns {Box3} 实例世界包围盒
+   */
+  getWorldBox(instanceId: string): Box3 {
+    const worldMatrix = this.getWorldMatrix(instanceId);
+    if (!this.mesh.geometry.boundingBox) this.mesh.geometry.computeBoundingBox();
+    _reusableBox3.copy(this.mesh.geometry.boundingBox!);
+    _reusableBox3.applyMatrix4(worldMatrix);
+    return _reusableBox3;
   }
   /**
    * 序列号

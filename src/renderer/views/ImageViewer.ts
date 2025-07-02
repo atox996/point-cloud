@@ -41,9 +41,9 @@ export default class ImageViewer extends Viewer {
     super.resize();
   }
 
-  focus(object = this.focusObject): void {
-    this.focusObject = object;
-    if (!object) return;
+  focus(instanceId = this.focusInstanceId): void {
+    this.focusInstanceId = instanceId;
+    if (!instanceId) return;
     // TODO: 聚焦相机到元素
   }
 
