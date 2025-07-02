@@ -88,6 +88,7 @@ const Home = () => {
       overhead.current?.dispose();
       side.current?.dispose();
       rear.current?.dispose();
+      shareScene.removeObject(...shareScene.getAnnotations3D());
     };
   }, []);
 

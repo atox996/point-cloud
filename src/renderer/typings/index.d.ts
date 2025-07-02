@@ -1,4 +1,4 @@
-import { Texture, Color, Vector2, Vector3, Vector4, Matrix3, Matrix4, Box3 } from "three";
+import { Texture, Color, Vector2, Vector3, Vector4, Matrix3, Matrix4 } from "three";
 export {};
 
 declare global {
