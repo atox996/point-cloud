@@ -43,9 +43,8 @@ export default class SelectAction extends Action {
   getInstanceId(event: PointerEvent) {
     this.updateProjectPos(event);
     const { boxes } = this.viewer.shareScene;
-    boxes.mesh.computeBoundingSphere();
     _raycaster.setFromCamera(_upPos, this.viewer.camera);
-    const intersects = _raycaster.intersectObjects([boxes.mesh], false);
+    const intersects = _raycaster.intersectObjects([boxes.line], false);
     if (intersects.length > 0 && intersects[0].instanceId !== undefined) {
       return boxes.getInstanceIdFromRenderId(intersects[0].instanceId);
     }

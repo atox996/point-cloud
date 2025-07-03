@@ -1,6 +1,6 @@
 import { AxesHelper, Box3, Box3Helper, EventDispatcher, Group, Plane, PlaneHelper, Scene, Vector3 } from "three";
 
-import type { InstanceAttributes } from "../utils/InstancedMeshManagger";
+import type { InstanceAttributes } from "../utils/InstancedMeshManager";
 import type Viewer from "../views/Viewer";
 import Boxes from "./objects/Boxes";
 import Points, { type PointsData } from "./Points";
@@ -51,7 +51,7 @@ export default class ShareScene extends EventDispatcher<TEventMap> {
     const axesHelper = new AxesHelper(100);
     axesHelper.visible = false;
 
-    this.scene.add(this.pointsGroup, this.boxes.mesh, this.ground, this.originHelper, axesHelper);
+    this.scene.add(this.pointsGroup, this.boxes.line, this.ground, this.originHelper, axesHelper);
   }
 
   addObject(objects: InstanceAttributes[]) {

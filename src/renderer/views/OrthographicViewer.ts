@@ -124,7 +124,7 @@ export default class OrthographicViewer extends Viewer {
     camera.updateMatrixWorld();
 
     const matrixWorld = this.shareScene.boxes.getWorldMatrix(focusInstanceId);
-    const bbox = this.shareScene.boxes.getWorldBox(focusInstanceId);
+    const bbox = this.shareScene.boxes.getGeometryBoundingBox();
 
     // === min 点投影到相机空间 ===
     _vector3.copy(bbox.min).applyMatrix4(matrixWorld).applyMatrix4(camera.matrixWorldInverse);
@@ -170,7 +170,7 @@ export default class OrthographicViewer extends Viewer {
       material.depthTest = false;
       this.renderer.render(pointsGroup, this.camera);
       material.depthTest = oldDepthTest;
-      const mesh = this.shareScene.boxes.getVirtualMesh(this.focusInstanceId);
+      const mesh = this.shareScene.boxes.getVirtualLine(this.focusInstanceId);
       this.renderer.render(mesh, this.camera);
     } else {
       this.renderer.render(pointsGroup, this.camera);

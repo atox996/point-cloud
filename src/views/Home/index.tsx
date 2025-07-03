@@ -82,7 +82,7 @@ const Home = () => {
       return new Color(Math.random(), Math.random(), Math.random());
     };
 
-    const boxes = Array.from({ length: 1000000 }, () => {
+    const boxes = Array.from({ length: 10000 }, () => {
       const id = MathUtils.generateUUID();
       const center = randomVector2(-200, 200); // xy 随机，z=0
       const size = randomSize(); // 任意 size
