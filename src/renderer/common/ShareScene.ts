@@ -1,6 +1,6 @@
 import { AxesHelper, Box3, Box3Helper, EventDispatcher, Group, Plane, PlaneHelper, Scene, Vector3 } from "three";
 
-import type { InstanceAttributes } from "../utils/InstancedMeshManager";
+import type { InstanceAttributes } from "../utils/InstancedLineManager";
 import type Viewer from "../views/Viewer";
 import Boxes from "./objects/Boxes";
 import Points, { type PointsData } from "./Points";

@@ -11,7 +11,7 @@ import {
   type Vector3Like,
 } from "three";
 
-import type { InstanceAttributes } from "./InstancedMeshManager";
+import type { InstanceAttributes } from "./InstancedLineManager";
 
 export const createBox3D = <T extends EmptyObject = EmptyObject>(data: {
   id: string;
