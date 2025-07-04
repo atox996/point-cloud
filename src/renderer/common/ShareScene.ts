@@ -82,6 +82,7 @@ export default class ShareScene extends EventDispatcher<TEventMap> {
       this.selection.add(id);
     });
     this.dispatchEvent({ type: "select", ids });
+    this.render();
   }
 
   clearData() {
@@ -148,6 +149,5 @@ export default class ShareScene extends EventDispatcher<TEventMap> {
       view.dispose();
     });
     this.views.length = 0;
-    this.material.dispose();
   }
 }

@@ -102,9 +102,5 @@ export default class Boxes extends InstancedLineManager {
     this.line.instanceColor = new InstancedBufferAttribute(new Float32Array(count * 3), 3);
     this.line.instanceColor.setUsage(DynamicDrawUsage);
     this.line.geometry.setAttribute("color", this.line.instanceColor);
-
-    this.line.material.onBeforeCompile = (shader) => {
-      console.log(shader);
-    };
   }
 }

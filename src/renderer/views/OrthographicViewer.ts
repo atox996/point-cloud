@@ -156,8 +156,8 @@ export default class OrthographicViewer extends Viewer {
     this.camera.right = cameraW / 2;
     this.camera.top = cameraH / 2;
     this.camera.bottom = -cameraH / 2;
-    this.camera.near = 0;
-    this.camera.far = projectRect.max.z - projectRect.min.z;
+    this.camera.near = -0.01;
+    this.camera.far = projectRect.max.z - projectRect.min.z + 0.01;
     this.camera.updateProjectionMatrix();
   }
 
@@ -170,8 +170,8 @@ export default class OrthographicViewer extends Viewer {
       material.depthTest = false;
       this.renderer.render(pointsGroup, this.camera);
       material.depthTest = oldDepthTest;
-      const mesh = this.shareScene.boxes.getVirtualLine(this.focusInstanceId);
-      this.renderer.render(mesh, this.camera);
+      // const mesh = this.shareScene.boxes.getVirtualLine(this.focusInstanceId);
+      // this.renderer.render(mesh, this.camera);
     } else {
       this.renderer.render(pointsGroup, this.camera);
     }

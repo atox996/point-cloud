@@ -1,6 +1,6 @@
 import { RawShaderMaterial, Vector2 } from "three";
 
-import { createLegacyJetTextureData, generateLegacyJetTextureData } from "../utils";
+import { createLegacyJetTextureData, generateGradientTextureData } from "../utils";
 import fragmentShader from "./shaders/points.fs?raw";
 import vertexShader from "./shaders/points.vs?raw";
 
@@ -76,14 +76,14 @@ export default class PointsMaterial extends RawShaderMaterial {
       color: makeNullableUniform("c", null),
       /** 渐变纹理: 优先级高于color */
       gradientTexture: makeNullableUniform("t", null),
-      gradientRange: makeNullableUniform("v2", new Vector2(-7, 3)),
+      gradientRange: makeNullableUniform("v2", new Vector2(-10, 2)),
       /** 高亮盒子 */
       highlightBox: makeNullableUniform("highlightBox", null),
     };
 
     // 默认使用渐变纹理
-    // const textureData = generateGradientTextureData();
-    const textureData = generateLegacyJetTextureData();
+    const textureData = generateGradientTextureData();
+    // const textureData = generateLegacyJetTextureData();
     this.setGradientTexture(textureData);
   }
 

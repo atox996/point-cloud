@@ -15,6 +15,8 @@ import {
   Sphere,
 } from "three";
 
+import { lineSegmentsRaycast } from "./lineSegments";
+
 interface InstancedLineEventMap extends Object3DEventMap {
   dispose: object;
 }
@@ -27,6 +29,7 @@ const _instanceIntersects: Intersection[] = [];
 const _box3 = /*@__PURE__*/ new Box3();
 const _identity = /*@__PURE__*/ new Matrix4();
 const _mesh = /*@__PURE__*/ new LineSegments();
+_mesh.raycast = lineSegmentsRaycast;
 const _sphere = /*@__PURE__*/ new Sphere();
 
 /**
